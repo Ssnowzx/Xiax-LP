@@ -1,0 +1,9 @@
+# TLS is automatic. Point the A record at the VPS and start the stack.
+xiax.com.br {
+	encode zstd gzip
+	reverse_proxy site:3000
+}
+
+www.xiax.com.br {
+	redir https://xiax.com.br{uri} permanent
+}

@@ -1,0 +1,1489 @@
+@import 'tailwindcss';
+
+/* A registered custom property animates and inherits: the block drives the
+   sweep, the highlighted words inside read it. */
+@property --sweep {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * Xiax design tokens.
+ *
+ * Everything here derives from the brand manual (docs/brand-source/canvas/
+ * XIAX-CONTEXTO-MARCA.md). The mark is a 100-unit grid: satellites 22u at 6u
+ * margins, core 30u centred with 7u clearance, breathing room of one
+ * satellite on every side. The spacing scale below is that grid at 4px/u.
+ *
+ * Hard rule: colour appears ONLY in the core. Structure and wordmark are
+ * always ink or paper, never violet.
+ * ------------------------------------------------------------------------- */
+
+@theme {
+  --color-ink: #0b0b0c;
+  --color-paper: #ffffff;
+  --color-core: oklch(0.52 0.17 295);
+  --color-core-lift: oklch(0.6 0.18 295);
+  --color-muted: #6e6e72;
+  --color-muted-lift: #8e8e93;
+  --color-rule: oklch(0.91 0.004 295);
+  --color-rule-lift: oklch(0.28 0.008 295);
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --text-data: 0.8125rem;
+  --text-data--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6;
+  --text-lede: 1.3125rem;
+  --text-lede--line-height: 1.5;
+  --text-xl: 1.625rem;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 2.125rem;
+  --text-2xl--line-height: 1.15;
+  --text-3xl: 2.875rem;
+  --text-3xl--line-height: 1.08;
+  --text-4xl: 3.5rem;
+  --text-4xl--line-height: 1.02;
+  --text-display: clamp(2.5rem, 5.2vw, 4.5rem);
+  --text-display--line-height: 1;
+
+  --tracking-display: -0.03em;
+  --tracking-wordmark: 0.3em;
+
+  /* The 100u brand grid at 4px per unit. */
+  --spacing-margin: 1.5rem;
+  --spacing-clearance: 1.75rem;
+  --spacing-satellite: 5.5rem;
+  --spacing-core: 7.5rem;
+  --spacing-orbit: 11rem;
+
+  --container-reading: 46rem;
+  --container-page: 76rem;
+
+  /* Motion: the brand loader's clock. Everything on the page keeps this tempo. */
+  --dur-quick: 180ms;
+  --dur-base: 320ms;
+  --dur-cycle-short: 1100ms;
+  --dur-cycle: 1600ms;
+  --dur-cycle-long: 2000ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --radius-none: 0;
+}
+
+/* Runtime theme surface. `inline` makes utilities read the live variable, so
+   `bg-surface` flips with the theme instead of freezing at build time. */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-on: var(--on);
+  --color-on-muted: var(--on-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-hairline: var(--hairline);
+}
+
+@layer base {
+  /* One theme, by the founder's decision (2026-09-10): the dark polarity.
+     The manual keeps the light one canonical for print and registration. */
+  :root {
+    --surface: var(--color-ink);
+    --on: var(--color-paper);
+    --on-muted: var(--color-muted-lift);
+    --accent: var(--color-core-lift);
+    --on-accent: var(--color-ink);
+    --hairline: var(--color-rule-lift);
+    color-scheme: dark;
+  }
+
+  * {
+    border-radius: var(--radius-none);
+  }
+
+  /* Same-document view transitions move only the named pieces. */
+  html {
+    view-transition-name: none;
+  }
+  ::view-transition-group(*) {
+    animation-duration: 480ms;
+    animation-timing-function: var(--ease-standard);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Scroll-driven and pointer-driven motion falls back to its end state. */
+  @media (prefers-reduced-motion: reduce) {
+    .page-grid,
+    [data-piece='blueprint'] {
+      display: none;
+    }
+    .loader rect {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  html {
+    background: var(--surface);
+    transition: background-color var(--dur-base) var(--ease-standard);
+  }
+
+  body {
+    position: relative;
+    background: transparent;
+    color: var(--on);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    transition: color var(--dur-base) var(--ease-standard);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* Reduced motion is a contract, not a nicety. The manual requires the
+     loader to fall back to a static mark; delays are zeroed so nothing that
+     waits to appear stays hidden. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* -- The mark, born from the centre outwards. Plays once, on load. -------- */
+  .mark-emerge [data-piece] {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .mark-emerge [data-piece='core'] {
+    animation: core-emerge var(--dur-base) var(--ease-standard) both;
+    animation-delay: var(--wait, 0ms);
+  }
+
+  .mark-emerge [data-piece='satellite'] {
+    animation: satellite-emerge var(--dur-base) var(--ease-standard) both;
+  }
+
+  .mark-emerge [data-piece='satellite']:nth-of-type(1) {
+    --from: translate(33px, 33px);
+    animation-delay: calc(var(--wait, 0ms) + var(--dur-base) + 0ms);
+  }
+
+  .mark-emerge [data-piece='satellite']:nth-of-type(2) {
+    --from: translate(-33px, 33px);
+    animation-delay: calc(var(--wait, 0ms) + var(--dur-base) + 200ms);
+  }
+
+  .mark-emerge [data-piece='satellite']:nth-of-type(3) {
+    --from: translate(-33px, -33px);
+    animation-delay: calc(var(--wait, 0ms) + var(--dur-base) + 400ms);
+  }
+
+  .mark-emerge [data-piece='satellite']:nth-of-type(4) {
+    --from: translate(33px, -33px);
+    animation-delay: calc(var(--wait, 0ms) + var(--dur-base) + 600ms);
+  }
+
+  /* -- "Pensando": the waiting loader from the manual. Core still, satellites
+        breathe clockwise with a 200ms lag, 1.6s cycle. --------------------- */
+  .mark-think [data-piece='satellite'] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: satellite-think var(--dur-cycle) ease-in-out infinite;
+  }
+
+  .mark-think [data-piece='satellite']:nth-of-type(2) {
+    animation-delay: 200ms;
+  }
+
+  .mark-think [data-piece='satellite']:nth-of-type(3) {
+    animation-delay: 400ms;
+  }
+
+  .mark-think [data-piece='satellite']:nth-of-type(4) {
+    animation-delay: 600ms;
+  }
+
+  /* -- The fronts laid out as the mark: four corners around one core. ------ */
+  .orbit-grid {
+    display: grid;
+    gap: var(--spacing-satellite) var(--spacing-clearance);
+  }
+  .front-rail {
+    display: flex;
+    gap: var(--spacing-margin);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 0.5rem;
+    margin-inline: calc(-1 * var(--spacing-margin));
+    padding-inline: var(--spacing-margin);
+    -webkit-overflow-scrolling: touch;
+  }
+  .front-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .front-rail > .front-cell {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+    border-top: 1px solid var(--on);
+    padding-top: var(--spacing-margin);
+  }
+  .front-hint {
+    margin-top: calc(-1 * var(--spacing-clearance));
+  }
+  @media (min-width: 48rem) {
+    .front-rail {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--spacing-satellite) var(--spacing-clearance);
+      overflow: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+    .front-rail > .front-cell {
+      flex: none;
+    }
+    .front-hint {
+      display: none;
+    }
+  }
+  @media (min-width: 64rem) {
+    .front-rail {
+      display: contents;
+    }
+    .front-rail > .front-cell {
+      border-top: 0;
+      padding-top: 0;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .fronts-section {
+      min-height: 100svh;
+      display: grid;
+      align-content: center;
+    }
+    .orbit-grid {
+      grid-template-columns: 22fr 7fr 30fr 7fr 22fr;
+      grid-template-rows: auto auto auto;
+      grid-template-areas:
+        'tl . . . tr'
+        '. . core . .'
+        'bl . . . br';
+      align-items: start;
+      row-gap: var(--spacing-clearance);
+    }
+
+    .orbit-grid [data-cell='tl'] {
+      grid-area: tl;
+    }
+    .orbit-grid [data-cell='tr'] {
+      grid-area: tr;
+    }
+    .orbit-grid [data-cell='core'] {
+      grid-area: core;
+    }
+    .orbit-grid [data-cell='bl'] {
+      grid-area: bl;
+      align-self: end;
+    }
+    .orbit-grid [data-cell='br'] {
+      grid-area: br;
+      align-self: end;
+    }
+  }
+
+
+  /* -- The mark at page scale: four outlined satellites behind everything,
+        opening as the page scrolls and closing again at the end. ---------- */
+  .page-shell {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+  }
+  @media (min-width: 64rem) {
+    .page-shell {
+      display: block;
+    }
+  }
+  .page-shell span {
+    position: absolute;
+    width: 22vmin;
+    height: 22vmin;
+    border: 1px solid var(--on-muted);
+    opacity: 0.28;
+  }
+  .page-shell [data-shell='tl'] {
+    top: 6vmin;
+    left: 6vmin;
+    --ox: -70%;
+    --oy: -70%;
+  }
+  .page-shell [data-shell='tr'] {
+    top: 6vmin;
+    right: 6vmin;
+    --ox: 70%;
+    --oy: -70%;
+  }
+  .page-shell [data-shell='br'] {
+    bottom: 6vmin;
+    right: 6vmin;
+    --ox: 70%;
+    --oy: 70%;
+  }
+  .page-shell [data-shell='bl'] {
+    bottom: 6vmin;
+    left: 6vmin;
+    --ox: -70%;
+    --oy: 70%;
+  }
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .page-shell span {
+        animation: shell-open linear both;
+        animation-timeline: scroll(root);
+      }
+    }
+  }
+
+  /* -- A band of the other polarity. The section flips its own tokens, so
+        every utility inside just works; the background sits at z -2 so the
+        travelling core still shows through. ------------------------------- */
+  .band-ink {
+    position: relative;
+    --surface: var(--color-paper);
+    --on: var(--color-ink);
+    --on-muted: var(--color-muted);
+    --accent: var(--color-core);
+    --on-accent: var(--color-paper);
+    --hairline: var(--color-rule);
+    color: var(--on);
+  }
+  .band-ink::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: var(--surface);
+  }
+
+  /* -- The comparison reads as stacked pairs where two columns cannot fit. -- */
+  @media (max-width: 47.99rem) {
+    .comparison thead {
+      display: none;
+    }
+    .comparison tr {
+      display: grid;
+      gap: 0.25rem;
+      padding-block: var(--spacing-margin);
+    }
+    .comparison td {
+      display: block;
+      padding: 0;
+    }
+    .comparison td::before {
+      content: attr(data-label);
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--text-data);
+      color: var(--on-muted);
+      margin-bottom: 0.125rem;
+    }
+    .comparison td + td::before {
+      margin-top: 0.5rem;
+    }
+  }
+
+  /* -- The action under the thumb on phones. ------------------------------- */
+  .mobile-cta {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 40;
+    padding: var(--spacing-margin);
+    padding-bottom: max(var(--spacing-margin), env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--on);
+    transform: none;
+    transition: transform var(--dur-base) var(--ease-standard);
+  }
+  .mobile-cta[data-hidden='true'] {
+    transform: translateY(110%);
+  }
+  @media (min-width: 64rem) {
+    .mobile-cta {
+      display: none;
+    }
+  }
+  @media (max-width: 63.99rem) {
+    body {
+      padding-bottom: 6rem;
+    }
+  }
+
+  /* -- Headings enter with a wipe, on the drafting-line logic. ------------- */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: wipe-in linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+      }
+    }
+  }
+
+  /* -- The hero fills the first screen. ------------------------------------ */
+  .hero-stage {
+    min-height: calc(100svh - 5.5rem);
+    padding-block: var(--spacing-satellite);
+    align-content: center;
+  }
+
+  /* -- The travelling core: one violet square for the whole page. --------- */
+  .core-traveler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    background: var(--accent);
+    transform-origin: 0 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    will-change: transform;
+  }
+  .core-traveler.is-visible {
+    opacity: 1;
+  }
+  .core-traveler.is-flying {
+    transition: transform 640ms var(--ease-standard);
+  }
+
+  /* Slots paint their own core until the traveller takes over. */
+  .core-slot {
+    background: var(--accent);
+    transition: background-color var(--dur-base) var(--ease-standard);
+  }
+  html.core-travels .core-slot {
+    background: transparent;
+  }
+  html.core-travels #hero-mark.is-docked [data-piece='core'],
+  html.core-travels .mark-progress [data-piece='core'] {
+    fill: transparent;
+  }
+
+  /* A slot the core has left keeps its outline: the structure stays where it
+     was; only the intelligence moved on. */
+  html.core-travels .core-slot:not([data-core-active]) {
+    outline: 1px solid var(--on-muted);
+    outline-offset: -1px;
+  }
+
+  /* The last slot is the action itself: the button is painted by the core. */
+  html.core-travels .btn-primary.core-slot {
+    background: transparent;
+    color: var(--on);
+  }
+  html.core-travels .btn-primary.core-slot[data-core-active] {
+    color: var(--on-accent);
+  }
+  html.core-travels #hero-mark.is-docked [data-piece='core']:not([data-core-active]),
+  html.core-travels .mark-progress [data-piece='core']:not([data-core-active]) {
+    stroke: var(--on-muted);
+    stroke-width: 1;
+  }
+
+  /* -- The engineering grid under the whole page, shown around the pointer. */
+  .hero-field {
+    position: relative;
+  }
+  .page-grid {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+    --mx: -9999px;
+    --my: -9999px;
+    transition: opacity var(--dur-base) var(--ease-standard);
+    -webkit-mask-image: radial-gradient(circle 280px at var(--mx) var(--my), black 30%, transparent 100%);
+    mask-image: radial-gradient(circle 280px at var(--mx) var(--my), black 30%, transparent 100%);
+  }
+  .page-grid.is-hot {
+    opacity: 0.45;
+  }
+
+  /* Construction lines of the mark, on the same grid. */
+  [data-piece='blueprint'] {
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-standard);
+  }
+  .hero-field.is-hot [data-piece='blueprint'] {
+    opacity: 1;
+  }
+
+  /* Satellites lean toward the pointer once the load-in is over. The core
+     does not move: the centre commands. */
+  #hero-mark.is-docked [data-piece='satellite'] {
+    transition: transform var(--dur-quick) var(--ease-standard);
+    transform: translate(calc(var(--px, 0) * 3px), calc(var(--py, 0) * 3px));
+  }
+
+  /* -- Method: the "loading in sequence" loader as a progress mark. ------- */
+  .mark-progress [data-piece='satellite'] {
+    fill: transparent;
+    stroke: var(--on);
+    stroke-width: 2;
+    transition: fill var(--dur-base) var(--ease-standard);
+  }
+  .mark-progress[data-step='1'] [data-piece='satellite']:nth-of-type(-n + 1),
+  .mark-progress[data-step='2'] [data-piece='satellite']:nth-of-type(-n + 2),
+  .mark-progress[data-step='3'] [data-piece='satellite']:nth-of-type(-n + 3),
+  .mark-progress[data-step='4'] [data-piece='satellite']:nth-of-type(-n + 4) {
+    fill: var(--on);
+  }
+
+  /* -- Fronts settle into their corners as the section enters the viewport. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) and (min-width: 64rem) {
+      .orbit-grid [data-cell]:not([data-cell='core']) {
+        animation: settle linear both;
+        animation-timeline: view();
+        animation-range: entry 5% entry 60%;
+      }
+      .orbit-grid [data-cell='tl'] {
+        --dx: 28px;
+        --dy: 28px;
+      }
+      .orbit-grid [data-cell='tr'] {
+        --dx: -28px;
+        --dy: 28px;
+      }
+      .orbit-grid [data-cell='br'] {
+        --dx: -28px;
+        --dy: -28px;
+      }
+      .orbit-grid [data-cell='bl'] {
+        --dx: 28px;
+        --dy: -28px;
+      }
+    }
+  }
+
+  /* -- A framed screen that tilts a few degrees toward the pointer. ------- */
+  .tilt {
+    transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform var(--dur-quick) var(--ease-standard);
+    transform-style: preserve-3d;
+  }
+
+  /* -- The header core breathes once when the theme changes. -------------- */
+  .mark-pulse-once [data-piece='core'] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: core-pulse var(--dur-cycle-short) var(--ease-standard) 1;
+  }
+
+
+  /* -- Buttons. The brand's atom slides in before the label on hover. ------ */
+  .btn {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition:
+      background-color var(--dur-quick) var(--ease-standard),
+      color var(--dur-quick) var(--ease-standard),
+      opacity var(--dur-quick) var(--ease-standard);
+  }
+  .btn::before {
+    content: '';
+    width: 0;
+    height: 0.375rem;
+    background: currentColor;
+    transition:
+      width var(--dur-quick) var(--ease-standard),
+      margin-right var(--dur-quick) var(--ease-standard);
+  }
+  .btn:hover::before,
+  .btn:focus-visible::before {
+    width: 0.375rem;
+    margin-right: 0.625rem;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+  .btn-secondary {
+    border: 1px solid var(--on);
+    color: var(--on);
+  }
+  .btn-secondary:hover {
+    background: var(--on);
+    color: var(--surface);
+  }
+  .btn-compact {
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+  }
+  /* Header items. Sized here, not with utilities, so the 320px step below
+     is not outranked by the utilities layer. */
+  .site-nav-list {
+    gap: 0.75rem;
+    font-size: var(--text-sm);
+  }
+  @media (min-width: 40rem) {
+    .site-nav-list {
+      gap: var(--spacing-margin);
+    }
+  }
+  @media (max-width: 22.49rem) {
+    .site-nav-list {
+      gap: 0.5rem;
+      font-size: var(--text-data);
+    }
+  }
+  /* On phones the header has no room for a button and the fixed bar already
+     carries the action, so the item reads as a plain link there. */
+  @media (max-width: 39.99rem) {
+    .nav-cta {
+      min-height: 0;
+      padding: 0.5rem 0;
+      border: 0;
+      font-size: inherit;
+    }
+    .nav-cta:hover {
+      background: transparent;
+      color: var(--on);
+      text-decoration: underline;
+    }
+  }
+
+  /* -- Section-end calls to action: one sentence, one button. The travelling
+     core paints the button when the reader reaches it. --------------------- */
+  .cta-rail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-clearance);
+    margin-top: var(--spacing-satellite);
+    border-top: 1px solid var(--hairline);
+    padding-top: var(--spacing-clearance);
+  }
+  .cta-rail-lede {
+    max-width: 36rem;
+    font-size: var(--text-lede);
+    line-height: var(--text-lede--line-height);
+  }
+
+  /* -- First-visit splash: the orbit loader on black, one cycle. ----------- */
+  .splash {
+    display: none;
+  }
+  html.has-splash .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    background: var(--color-ink);
+    transition: transform 640ms var(--ease-exit);
+    animation: splash-fallback 0s 4s forwards;
+  }
+  .splash.is-leaving {
+    transform: translateY(-100%);
+  }
+
+  /* -- The operation before and after. ------------------------------------- */
+  .assembly {
+    display: grid;
+    gap: var(--spacing-margin);
+    justify-items: start;
+  }
+  .assembly-toggle {
+    padding: 0.5rem 1rem;
+    font-size: var(--text-sm);
+    border: 1px solid var(--hairline);
+    color: var(--on-muted);
+    transition:
+      background-color var(--dur-quick) var(--ease-standard),
+      color var(--dur-quick) var(--ease-standard);
+  }
+  .assembly-toggle[aria-pressed='true'] {
+    background: var(--on);
+    border-color: var(--on);
+    color: var(--surface);
+  }
+  .assembly-stage {
+    width: 100%;
+    max-width: 26rem;
+    aspect-ratio: 1;
+    overflow: visible;
+    margin-block: 1rem;
+  }
+  .assembly-stage rect {
+    transform-box: fill-box;
+    fill: var(--on-muted);
+    transition:
+      transform 900ms var(--ease-standard),
+      fill var(--dur-base) var(--ease-standard);
+  }
+  .assembly[data-mode='after'] rect[data-piece='satellite'] {
+    fill: var(--on);
+  }
+  .assembly[data-mode='after'] rect[data-piece='core'] {
+    fill: var(--accent);
+  }
+  .assembly-stage text {
+    font-family: var(--font-mono);
+    font-size: 3.1px;
+    fill: var(--on-muted);
+    transition: opacity var(--dur-base) var(--ease-standard);
+  }
+  .assembly[data-mode='after'] text[data-label='before'] {
+    opacity: 0;
+  }
+  .assembly-stage text[data-label='after'] {
+    opacity: 0;
+    fill: var(--on);
+  }
+  .assembly[data-mode='after'] text[data-label='after'] {
+    opacity: 1;
+  }
+  /* The core carries the wordmark, set like the lockup: Archivo 700,
+     uppercase, 0.30em tracking. The trailing tracking is balanced with dx. */
+  .assembly-stage text[data-label-core] {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 5.2px;
+    letter-spacing: var(--tracking-wordmark);
+  }
+  .assembly[data-mode='after'] text[data-label-core] {
+    fill: var(--on-accent);
+  }
+
+  /* -- The fronts on the mark's construction lines. ------------------------ */
+  .blueprint {
+    position: relative;
+  }
+  .blueprint-line {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .blueprint-line {
+      display: block;
+      position: absolute;
+      top: calc(-1 * var(--spacing-satellite));
+      bottom: calc(-1 * var(--spacing-satellite));
+      width: 1px;
+      background: var(--hairline);
+      pointer-events: none;
+    }
+    .blueprint [data-cell='core'] {
+      position: relative;
+    }
+    .blueprint [data-cell='core']::before,
+    .blueprint [data-cell='core']::after {
+      content: '';
+      position: absolute;
+      left: calc(-100% * 29 / 30);
+      right: calc(-100% * 29 / 30);
+      height: 1px;
+      background: var(--hairline);
+      pointer-events: none;
+    }
+    .blueprint [data-cell='core']::before {
+      top: 0;
+    }
+    .blueprint [data-cell='core']::after {
+      bottom: 0;
+    }
+  }
+  /* The core as a mosaic: white cells painted by the slot, the rest
+     transparent, so the travelling core shows through them in violet when
+     it is here and the page shows through when it is not. A white plate in
+     the middle keeps the words readable in either state. */
+  .slot-core {
+    position: relative;
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: 15rem;
+    container-type: inline-size;
+  }
+  @media (min-width: 64rem) {
+    .slot-core {
+      max-width: min(100%, 30vh);
+      margin-inline: auto;
+      z-index: 1;
+    }
+  }
+  @media (min-width: 64rem) and (max-height: 60rem) {
+    .slot-core {
+      max-width: min(100%, 26vh);
+    }
+  }
+  .mosaic {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: 1px;
+  }
+  .mosaic-cell {
+    display: block;
+    background: transparent;
+  }
+  .mosaic-cell.is-white {
+    background: var(--on);
+  }
+  .slot-text {
+    position: absolute;
+    inset: 30% 10%;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    padding: 0 3cqw;
+    color: var(--surface);
+  }
+  .slot-caption {
+    font-size: 8cqw;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+  }
+  .slot-note {
+    margin-top: 1.5cqw;
+    font-size: 4.8cqw;
+    line-height: 1.35;
+    opacity: 0.8;
+  }
+  .front-cell {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* A small real screen as proof, sharp because it is small. */
+  .proof {
+    border: 1px solid var(--on);
+    background: var(--color-ink);
+  }
+
+  /* -- Squares falling and stacking on the footer line. Tetris, squares only. */
+  .pile {
+    display: block;
+    width: 100%;
+    height: 10rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  @media (min-width: 48rem) {
+    .pile {
+      height: 14rem;
+    }
+  }
+
+  /* -- The contact form as a sentence with blanks. ------------------------- */
+  .story {
+    display: grid;
+    gap: var(--spacing-clearance);
+  }
+  .story-line {
+    font-size: var(--text-lede);
+    line-height: 2;
+    text-wrap: pretty;
+  }
+  .blank {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+  }
+  .blank-input {
+    display: inline-block;
+    max-width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--on);
+    background: transparent;
+    color: var(--on);
+    font: inherit;
+    line-height: 1.4;
+    padding: 0 0.25rem;
+    min-width: 6ch;
+    field-sizing: content;
+  }
+  .blank-input::placeholder {
+    color: var(--on-muted);
+  }
+  .blank-input:focus {
+    outline: none;
+    border-bottom-width: 2px;
+  }
+  .blank[data-invalid='true'] .blank-input {
+    border-bottom-width: 2px;
+    border-bottom-style: dashed;
+  }
+  .blank-select {
+    appearance: none;
+    padding-right: 1.25rem;
+    cursor: pointer;
+  }
+  /* The select's marker is the brand's atom, drawn by the wrapper. */
+  .blank:has(.blank-select)::after {
+    content: '';
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    width: 0.375rem;
+    height: 0.375rem;
+    background: var(--on);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .story-text {
+    display: block;
+    width: 100%;
+    min-height: 7rem;
+    border: 0;
+    border-bottom: 1px solid var(--on);
+    background: transparent;
+    color: var(--on);
+    font: inherit;
+    font-size: var(--text-lede);
+    line-height: 1.6;
+    padding: 0.5rem 0.25rem;
+    resize: vertical;
+    field-sizing: content;
+  }
+  .story-text::placeholder {
+    color: var(--on-muted);
+  }
+  .story-text:focus {
+    outline: none;
+    border-bottom-width: 2px;
+  }
+  .story-text[aria-invalid='true'] {
+    border-bottom-width: 2px;
+    border-bottom-style: dashed;
+  }
+  .story-errors {
+    display: grid;
+    gap: 0.25rem;
+    font-size: var(--text-sm);
+    border-left: 2px solid var(--on);
+    padding-left: var(--spacing-margin);
+  }
+
+  /* -- Violet over the words: the core's colour sweeping across the text as
+        the page scrolls, the letters darkening where it has passed. -------- */
+  .highlight {
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-size: var(--sweep) 100%;
+    color: color-mix(in oklab, var(--on-accent) var(--sweep), var(--on));
+    box-decoration-break: slice;
+    -webkit-box-decoration-break: slice;
+    padding: 0.04em 0.12em;
+    margin: -0.04em -0.12em;
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .sweep {
+        animation: sweep linear both;
+        animation-timeline: view();
+        animation-range: entry 25% cover 45%;
+      }
+    }
+  }
+
+  /* -- The violet band across the top of the contact section. ------------- */
+  /* -- The contact form in a card. ----------------------------------------- */
+  /* No fill: the travelling core sits behind the page and must show through
+     the card when it docks on the submit button. */
+  .contact-card {
+    position: relative;
+    border: 1px solid var(--on);
+    padding: var(--spacing-clearance);
+  }
+  @media (min-width: 48rem) {
+    .contact-card {
+      padding: var(--spacing-satellite);
+    }
+  }
+  .contact-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: var(--spacing-clearance);
+  }
+  .contact-card-head .data {
+    font-size: var(--text-lede);
+  }
+
+  /* -- The comparison as a story: the market line is struck through as the
+        Xiax line steps forward, driven by scroll. ------------------------- */
+  .struck {
+    position: relative;
+    display: inline;
+  }
+  .struck::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    height: 1px;
+    width: 0;
+    background: var(--on-muted);
+  }
+  .stepping {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: var(--text-lede);
+    line-height: var(--text-lede--line-height);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .stepping i {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    background: var(--on);
+    transform: translateY(-0.1em);
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .struck::after {
+        animation: strike linear both;
+        animation-timeline: view();
+        animation-range: entry 40% entry 90%;
+      }
+      .stepping {
+        animation: step-in linear both;
+        animation-timeline: view();
+        animation-range: entry 45% entry 95%;
+      }
+    }
+  }
+
+  /* -- The manual's loaders. ----------------------------------------------- */
+  .loader rect[data-piece='satellite'] {
+    fill: var(--on);
+  }
+  .loader rect[data-piece='core'] {
+    fill: var(--accent);
+  }
+  .loader rect[data-piece='orbiter'] {
+    fill: var(--accent);
+  }
+  /* do centro para fora */
+  .loader[data-variant='grow'] rect[data-piece='core'] {
+    animation: loader-core-soft var(--d) ease-in-out infinite;
+  }
+  .loader[data-variant='grow'] rect[data-piece='satellite'] {
+    transform-box: view-box;
+    transform-origin: 50px 50px;
+    animation: loader-grow var(--d) ease-out infinite;
+  }
+  .loader[data-variant='grow'] rect[data-piece='satellite']:nth-of-type(2) {
+    animation-delay: calc(var(--d) * 0.1);
+  }
+  .loader[data-variant='grow'] rect[data-piece='satellite']:nth-of-type(3) {
+    animation-delay: calc(var(--d) * 0.2);
+  }
+  .loader[data-variant='grow'] rect[data-piece='satellite']:nth-of-type(4) {
+    animation-delay: calc(var(--d) * 0.3);
+  }
+  /* carregando em sequência */
+  .loader[data-variant='sequence'] rect[data-piece='satellite'] {
+    animation: loader-fill var(--d) linear infinite;
+  }
+  .loader[data-variant='sequence'] rect[data-piece='satellite']:nth-of-type(2) {
+    animation-delay: calc(var(--d) * 0.12);
+  }
+  .loader[data-variant='sequence'] rect[data-piece='satellite']:nth-of-type(3) {
+    animation-delay: calc(var(--d) * 0.24);
+  }
+  .loader[data-variant='sequence'] rect[data-piece='satellite']:nth-of-type(4) {
+    animation-delay: calc(var(--d) * 0.36);
+  }
+  /* órbita com rastro: satellites carry the colour, the core stays structure */
+  .loader[data-variant='trail'] rect[data-piece='core'] {
+    fill: var(--on);
+  }
+  .loader[data-variant='trail'] rect[data-piece='satellite'] {
+    fill: var(--accent);
+    animation: loader-trail var(--d) linear infinite;
+  }
+  .loader[data-variant='trail'] rect[data-piece='satellite']:nth-of-type(2) {
+    animation-delay: calc(var(--d) * 0.25);
+  }
+  .loader[data-variant='trail'] rect[data-piece='satellite']:nth-of-type(3) {
+    animation-delay: calc(var(--d) * 0.5);
+  }
+  .loader[data-variant='trail'] rect[data-piece='satellite']:nth-of-type(4) {
+    animation-delay: calc(var(--d) * 0.75);
+  }
+  /* órbita contínua e em passos: ghost satellites, structure core, one square going round */
+  .loader[data-variant='orbit'] rect[data-piece='satellite'],
+  .loader[data-variant='orbit-step'] rect[data-piece='satellite'] {
+    opacity: 0.16;
+  }
+  .loader[data-variant='orbit'] rect[data-piece='core'],
+  .loader[data-variant='orbit-step'] rect[data-piece='core'] {
+    fill: var(--on);
+  }
+  .loader[data-variant='orbit'] rect[data-piece='orbiter'] {
+    animation: loader-orbit var(--d) linear infinite;
+  }
+  .loader[data-variant='orbit-step'] rect[data-piece='orbiter'] {
+    animation: loader-orbit-step var(--d) cubic-bezier(0.7, 0, 0.3, 1) infinite;
+  }
+  /* pontilhado */
+  .loader[data-variant='dots'] rect {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: loader-dot var(--d) ease-in-out infinite;
+  }
+  .loader[data-variant='dots'] rect[data-piece='satellite']:nth-of-type(2) {
+    animation-delay: calc(var(--d) * 0.15);
+  }
+  .loader[data-variant='dots'] rect[data-piece='satellite']:nth-of-type(3) {
+    animation-delay: calc(var(--d) * 0.3);
+  }
+  .loader[data-variant='dots'] rect[data-piece='satellite']:nth-of-type(4) {
+    animation-delay: calc(var(--d) * 0.45);
+  }
+  .loader[data-variant='dots'] rect[data-piece='core'] {
+    animation: loader-dot-core var(--d) ease-in-out infinite;
+    animation-delay: calc(var(--d) * 0.6);
+  }
+  /* pulso do núcleo */
+  .loader[data-variant='pulse'] rect[data-piece='core'] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: loader-dot-core calc(var(--d) * 0.75) ease-in-out infinite;
+  }
+
+  /* -- Long-form text (privacy notice). ------------------------------------ */
+  .prose-xiax > * + * {
+    margin-top: var(--spacing-clearance);
+  }
+  .prose-xiax h2 {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    margin-top: var(--spacing-satellite);
+  }
+  .prose-xiax ul {
+    padding-left: 1.2em;
+    list-style: square;
+  }
+  .prose-xiax li + li {
+    margin-top: 0.4em;
+  }
+}
+
+@layer components {
+  /* Form fields. An invalid one thickens its border; there is no red in the brand. */
+  .field {
+    margin-top: 0.5rem;
+    display: block;
+    width: 100%;
+    border: 1px solid var(--on-muted);
+    background: var(--surface);
+    color: var(--on);
+    padding: 0.75rem 1rem;
+    font-size: var(--text-base);
+  }
+  .field:focus {
+    border-color: var(--on);
+  }
+  .field[aria-invalid='true'] {
+    border-color: var(--on);
+    border-width: 2px;
+  }
+}
+
+@layer utilities {
+  /* Reading measure. Body copy never runs wider than this. */
+  .measure {
+    max-width: 68ch;
+  }
+
+  /* Real data only: identifiers, states, dates, stacks. Never decoration. */
+  .data {
+    font-family: var(--font-mono);
+    font-size: var(--text-data);
+    line-height: var(--text-data--line-height);
+    font-variant-numeric: tabular-nums;
+    color: var(--on-muted);
+  }
+}
+
+@keyframes core-emerge {
+  from {
+    transform: scale(0.12);
+    opacity: 0;
+  }
+}
+
+@keyframes satellite-emerge {
+  from {
+    transform: var(--from) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes satellite-think {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.55);
+    opacity: 0.45;
+  }
+}
+
+@keyframes settle {
+  from {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0.4;
+  }
+}
+
+@keyframes core-pulse {
+  50% {
+    transform: scale(0.7);
+  }
+}
+
+@keyframes splash-fallback {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes loader-grow {
+  0% {
+    transform: scale(0.12);
+    opacity: 0;
+  }
+  18% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  76% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes loader-fill {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  74% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loader-trail {
+  0% {
+    opacity: 1;
+  }
+  24% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.1;
+  }
+}
+
+@keyframes loader-orbit {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  25% {
+    transform: translate(66px, 0px);
+  }
+  50% {
+    transform: translate(66px, 66px);
+  }
+  75% {
+    transform: translate(0px, 66px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+@keyframes loader-orbit-step {
+  0%,
+  17% {
+    transform: translate(0px, 0px);
+  }
+  25%,
+  42% {
+    transform: translate(66px, 0px);
+  }
+  50%,
+  67% {
+    transform: translate(66px, 66px);
+  }
+  75%,
+  92% {
+    transform: translate(0px, 66px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+@keyframes loader-dot {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.4);
+  }
+}
+
+@keyframes loader-dot-core {
+  0%,
+  100% {
+    transform: scale(1);
+    fill: var(--accent);
+  }
+  45% {
+    transform: scale(0.4);
+    fill: color-mix(in oklch, var(--accent) 65%, white);
+  }
+}
+
+@keyframes loader-core-soft {
+  0%,
+  100% {
+    fill: var(--accent);
+  }
+  50% {
+    fill: color-mix(in oklch, var(--accent) 65%, white);
+  }
+}
+
+@keyframes shell-open {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translate(var(--ox), var(--oy));
+  }
+}
+
+@keyframes wipe-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes strike {
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0.25;
+    transform: translateX(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  from {
+    --sweep: 0%;
+  }
+  to {
+    --sweep: 100%;
+  }
+}

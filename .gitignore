@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+coverage
+playwright-report
+test-results
+.env*
+!.env.example
+*.zip
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+.claude/settings.local.json
+screenshots
+*.log

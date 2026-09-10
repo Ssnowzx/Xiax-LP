@@ -1,0 +1,23 @@
+Xiax — marca final
+
+Símbolo: 3c (quatro satélites + núcleo)
+Lockup: 6a (símbolo + XIAX, Archivo 700, tracking 0.30em, caixa alta)
+
+Cores
+  núcleo   oklch(0.52 0.17 295)  ≈ #7B57D4
+  núcleo em fundo escuro  oklch(0.60 0.18 295) ≈ #8E6FE0
+  escuro   #0B0B0C
+  claro    #FFFFFF
+  apoio    #6E6E72 (texto secundário)
+
+Geometria (grade 100u)
+  satélite 22u nos cantos, margem 6u
+  núcleo 30u centrado, folga 7u
+  respiro: 1 satélite (22u) em todos os lados
+  vão símbolo–nome no lockup: 1 satélite
+
+Mínimos
+  símbolo isolado: 16px tela / 8mm impresso
+  lockup completo: símbolo com 24px de altura
+
+Uma tinta: núcleo em preto ou branco.

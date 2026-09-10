@@ -1,0 +1,29 @@
+services:
+  site:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://xiax.com.br}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-}
+    environment:
+      CONTACT_WEBHOOK_URL: ${CONTACT_WEBHOOK_URL:-}
+    restart: unless-stopped
+    expose:
+      - '3000'
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - site
+
+volumes:
+  caddy_data:
+  caddy_config:

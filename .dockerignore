@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+coverage
+.git
+.env*
+!.env.example
+*.zip
+docs/brand-source
+.claude
+openspec
