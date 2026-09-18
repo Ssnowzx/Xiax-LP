@@ -1200,8 +1200,21 @@
     pointer-events: none;
   }
   .field-error {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: 700;
+  }
+  /* The atom points at the field that needs fixing. Decoration only:
+     the sentence carries the meaning, in full-contrast ink. */
+  .field-error::before {
+    content: '';
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--accent);
+    transform: translateY(-0.0625rem);
   }
   .contact-actions {
     display: flex;

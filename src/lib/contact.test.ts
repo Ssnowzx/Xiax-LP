@@ -35,7 +35,7 @@ describe('parseContact', () => {
     expect(result.status).toBe('invalid')
     if (result.status === 'invalid') {
       expect(result.errors.email).toBe('Esse e-mail não parece válido.')
-      expect(result.errors.message).toContain('Conte um pouco mais')
+      expect(result.errors.message).toContain('A mensagem está curta')
       expect(result.errors.name).toBeUndefined()
     }
   })
