@@ -39,8 +39,9 @@ em telefone — `document.documentElement.scrollWidth` igual a `window.innerWidt
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | não (padrão `https://xiax.com.br`) | URLs canônicas, sitemap, robots, JSON-LD |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | não (padrão `xiaxdesenvolvimento@gmail.com`) | e-mail mostrado se o formulário não puder enviar |
-| `CONTACT_SMTP_USER` / `CONTACT_SMTP_PASS` | não | conta SMTP que envia o formulário por e-mail; os dois juntos ligam o envio |
-| `CONTACT_SMTP_HOST` / `CONTACT_SMTP_PORT` | não (padrão `smtp.gmail.com` / `465`) | servidor SMTP |
+| `CONTACT_SMTP_HOST` / `CONTACT_SMTP_PORT` | não | servidor SMTP; só o host já liga o envio (relay sem login, porta 25 por padrão) |
+| `CONTACT_SMTP_USER` / `CONTACT_SMTP_PASS` | não | login SMTP; os dois juntos ligam o envio, com `smtp.gmail.com:465` por padrão |
+| `CONTACT_FROM_EMAIL` | não (padrão usuário SMTP, senão `site@<host do site>`) | remetente mostrado no e-mail |
 | `CONTACT_TO_EMAIL` | não (padrão `NEXT_PUBLIC_CONTACT_EMAIL`) | caixa que recebe o formulário |
 | `CONTACT_WEBHOOK_URL` | não | endpoint da Xiax que recebe o formulário em JSON |
 | `CONTACT_WEBHOOK_SECRET` | não | segredo compartilhado; assina cada envio (HMAC-SHA256) no header `x-xiax-signature` |
@@ -48,12 +49,19 @@ em telefone — `document.documentElement.scrollWidth` igual a `window.innerWidt
 O formulário entrega por e-mail (SMTP), por webhook, ou pelos dois; "enviado" quando ao menos um
 aceitou. Sem nenhum dos dois, valida e avisa que o envio não está ligado.
 
-### E-mail pelo Gmail
+### E-mail: dois jeitos
 
-1. Na conta Google, ligue a verificação em duas etapas.
-2. Crie uma senha de app em <https://myaccount.google.com/apppasswords> (nome livre, ex. "site").
-3. No `.env` da VPS: `CONTACT_SMTP_USER=xiaxdesenvolvimento@gmail.com` e `CONTACT_SMTP_PASS=` a senha
-   de app (com ou sem os espaços). Depois `docker compose up -d` (o `.env` é lido no `up`, sem rebuild).
+**(a) Pelo próprio servidor (postfix/sendmail na VPS), sem conta Google.** Instale o postfix na VPS
+(`apt install postfix`, tipo "Internet Site"), deixe-o aceitar a rede do Docker (`mynetworks` com
+`172.16.0.0/12`, `inet_interfaces = all`) e no `.env`: `CONTACT_SMTP_HOST=host.docker.internal`.
+Para o Gmail não jogar em spam, o domínio do remetente precisa de SPF e rDNS apontando para a VPS,
+e o provedor precisa liberar a porta 25 de saída.
+
+**(b) Pelo Gmail com senha de app.** Ligue a verificação em duas etapas, crie a senha em
+<https://myaccount.google.com/apppasswords> e no `.env`: `CONTACT_SMTP_USER=xiaxdesenvolvimento@gmail.com`
+e `CONTACT_SMTP_PASS=` a senha (com ou sem espaços). O Gmail não aceita mais a senha comum da conta.
+
+Nos dois casos, `docker compose up -d` basta (o `.env` é lido no `up`, sem rebuild).
 
 A mensagem chega em texto puro, com `Reply-To` na pessoa: responder o e-mail já responde o lead.
 Mensagem na zona de suspeita vai com `[suspeito]` no assunto e as razões no corpo.

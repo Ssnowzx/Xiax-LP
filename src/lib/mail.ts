@@ -6,8 +6,8 @@ import { FRONT_OPTIONS } from '@/content/fronts'
 export interface SmtpAccount {
   readonly host: string
   readonly port: number
-  readonly user: string
-  readonly pass: string
+  /** Absent for a relay on the private network that takes mail without a login. */
+  readonly auth?: { readonly user: string; readonly pass: string } | undefined
 }
 
 /** What goes out. Plain text only: the reader is Xiax, in a mail client. */
@@ -60,13 +60,17 @@ export function composeContactMail(payload: ContactPayload, options: ComposeOpti
   }
 }
 
-/** Sends through the configured SMTP account. Throws when the server refuses. */
+/**
+ * Sends through the configured SMTP server. Throws when the server refuses.
+ * Port 465 is implicit TLS; an unauthenticated relay is spoken to in plain
+ * text, because it lives on the same machine or private network.
+ */
 export async function sendContactMail(mail: ContactMail, account: SmtpAccount): Promise<void> {
   const transport = createTransport({
     host: account.host,
     port: account.port,
     secure: account.port === 465,
-    auth: { user: account.user, pass: account.pass },
+    ...(account.auth ? { auth: account.auth } : { ignoreTLS: true }),
   })
   await transport.sendMail(mail)
 }

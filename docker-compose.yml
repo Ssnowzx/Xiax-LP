@@ -9,10 +9,14 @@ services:
       CONTACT_WEBHOOK_URL: ${CONTACT_WEBHOOK_URL:-}
       CONTACT_WEBHOOK_SECRET: ${CONTACT_WEBHOOK_SECRET:-}
       CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-}
-      CONTACT_SMTP_HOST: ${CONTACT_SMTP_HOST:-smtp.gmail.com}
-      CONTACT_SMTP_PORT: ${CONTACT_SMTP_PORT:-465}
+      CONTACT_SMTP_HOST: ${CONTACT_SMTP_HOST:-}
+      CONTACT_SMTP_PORT: ${CONTACT_SMTP_PORT:-}
       CONTACT_SMTP_USER: ${CONTACT_SMTP_USER:-}
       CONTACT_SMTP_PASS: ${CONTACT_SMTP_PASS:-}
+      CONTACT_FROM_EMAIL: ${CONTACT_FROM_EMAIL:-}
+    # Lets the container reach a postfix/sendmail running on the VPS itself.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     restart: unless-stopped
     expose:
       - '3000'

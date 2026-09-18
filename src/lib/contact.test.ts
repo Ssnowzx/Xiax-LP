@@ -59,7 +59,8 @@ describe('deliverContact', () => {
 
   const mail = {
     to: 'xiaxdesenvolvimento@gmail.com',
-    account: { host: 'smtp.gmail.com', port: 465, user: 'xiaxdesenvolvimento@gmail.com', pass: 'segredo' },
+    from: 'xiaxdesenvolvimento@gmail.com',
+    account: { host: 'smtp.gmail.com', port: 465, auth: { user: 'xiaxdesenvolvimento@gmail.com', pass: 'segredo' } },
   }
 
   it('should report unconfigured when there is neither webhook nor mailbox', async () => {

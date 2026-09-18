@@ -36,9 +36,10 @@ export function parseContact(input: unknown): ContactResult | { status: 'ok'; pa
   return { status: 'invalid', errors }
 }
 
-/** Mailbox plus the account that sends to it. Both come from the environment. */
+/** Mailbox, sender and the server that carries it. All come from the environment. */
 export interface MailChannel {
   readonly to: string
+  readonly from: string
   readonly account: SmtpAccount
 }
 
@@ -82,7 +83,7 @@ async function sendMail(
   { mail, address, spam, sendMailImpl = sendContactMail }: DeliverOptions & { mail: MailChannel },
   receivedAt: Date,
 ): Promise<boolean> {
-  const composed = composeContactMail(payload, { to: mail.to, fromAddress: mail.account.user, address, spam, receivedAt })
+  const composed = composeContactMail(payload, { to: mail.to, fromAddress: mail.from, address, spam, receivedAt })
   try {
     await sendMailImpl(composed, mail.account)
     return true

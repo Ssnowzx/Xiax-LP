@@ -15,14 +15,21 @@ function elapsedSince(startedAt: FormDataEntryValue | null): number | undefined 
   return Number.isFinite(started) && started > 0 ? Date.now() - started : undefined
 }
 
-/** The SMTP channel, when user and password are set. The mailbox defaults to the public address. */
+const GMAIL_SMTP = { host: 'smtp.gmail.com', port: 465 } as const
+
+/**
+ * The e-mail channel. A host alone is a relay on the private network (postfix
+ * on the VPS); user and password add a login, with Gmail as the default server.
+ */
 function mailChannel(): MailChannel | undefined {
   const to = env.CONTACT_TO_EMAIL ?? env.NEXT_PUBLIC_CONTACT_EMAIL
-  if (!to || !env.CONTACT_SMTP_USER || !env.CONTACT_SMTP_PASS) return undefined
-  return {
-    to,
-    account: { host: env.CONTACT_SMTP_HOST, port: env.CONTACT_SMTP_PORT, user: env.CONTACT_SMTP_USER, pass: env.CONTACT_SMTP_PASS },
-  }
+  const auth =
+    env.CONTACT_SMTP_USER && env.CONTACT_SMTP_PASS ? { user: env.CONTACT_SMTP_USER, pass: env.CONTACT_SMTP_PASS } : undefined
+  const host = env.CONTACT_SMTP_HOST ?? (auth ? GMAIL_SMTP.host : undefined)
+  if (!to || !host) return undefined
+  const port = env.CONTACT_SMTP_PORT ?? (auth ? GMAIL_SMTP.port : 25)
+  const from = env.CONTACT_FROM_EMAIL ?? auth?.user ?? `site@${new URL(env.NEXT_PUBLIC_SITE_URL).hostname}`
+  return { to, from, account: { host, port, auth } }
 }
 
 /**
