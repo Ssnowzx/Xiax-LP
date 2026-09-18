@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { deliverContact, parseContact } from '@/lib/contact'
+import type { SpamVerdict } from '@/types'
+import { SIGNATURE_HEADER, deliverContact, parseContact, signBody } from '@/lib/contact'
 
 const VALID = {
   name: 'Ana',
@@ -52,13 +53,15 @@ describe('parseContact', () => {
 
 describe('deliverContact', () => {
   const payload = { ...VALID, front: 'gestao' as const }
+  const ham: SpamVerdict = { verdict: 'ham', score: 0, reasons: [] }
+  const context = { address: '203.0.113.7', spam: ham }
 
   it('should report unconfigured when there is no webhook', async () => {
     // ARRANGE
     const webhookUrl = undefined
 
     // ACT
-    const result = await deliverContact(payload, { webhookUrl })
+    const result = await deliverContact(payload, { ...context, webhookUrl })
 
     // ASSERT
     expect(result).toEqual({ status: 'failed', reason: 'unconfigured' })
@@ -69,14 +72,35 @@ describe('deliverContact', () => {
     const fetchImpl = vi.fn<typeof fetch>(async () => new Response(null, { status: 200 }))
 
     // ACT
-    const result = await deliverContact(payload, { webhookUrl: 'https://hooks.xiax.com.br/contato', fetchImpl })
+    const result = await deliverContact(payload, { ...context, webhookUrl: 'https://hooks.xiax.com.br/contato', fetchImpl })
 
     // ASSERT
     expect(result).toEqual({ status: 'sent' })
     const [url, init] = fetchImpl.mock.calls[0] ?? []
     expect(url).toBe('https://hooks.xiax.com.br/contato')
     expect(init?.method).toBe('POST')
-    expect(JSON.parse(String(init?.body))).toMatchObject({ name: 'Ana', source: 'xiax-site' })
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      name: 'Ana',
+      source: 'xiax-site',
+      address: '203.0.113.7',
+      spam: ham,
+    })
+    expect(init?.headers).not.toHaveProperty(SIGNATURE_HEADER)
+  })
+
+  it('should sign the body when a secret is configured', async () => {
+    // ARRANGE
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(null, { status: 200 }))
+    const secret = 'uma-chave-longa-o-bastante'
+
+    // ACT
+    await deliverContact(payload, { ...context, webhookUrl: 'https://x.test', secret, fetchImpl })
+
+    // ASSERT
+    const init = fetchImpl.mock.calls[0]?.[1]
+    const headers = init?.headers as Record<string, string>
+    expect(headers[SIGNATURE_HEADER]).toBe(signBody(String(init?.body), secret))
+    expect(headers[SIGNATURE_HEADER]).toMatch(/^sha256=[0-9a-f]{64}$/)
   })
 
   it('should report upstream failure on non-2xx or network error', async () => {
@@ -87,8 +111,8 @@ describe('deliverContact', () => {
     })
 
     // ACT
-    const onStatus = await deliverContact(payload, { webhookUrl: 'https://x.test', fetchImpl: failing })
-    const onThrow = await deliverContact(payload, { webhookUrl: 'https://x.test', fetchImpl: throwing })
+    const onStatus = await deliverContact(payload, { ...context, webhookUrl: 'https://x.test', fetchImpl: failing })
+    const onThrow = await deliverContact(payload, { ...context, webhookUrl: 'https://x.test', fetchImpl: throwing })
 
     // ASSERT
     expect(onStatus).toEqual({ status: 'failed', reason: 'upstream' })

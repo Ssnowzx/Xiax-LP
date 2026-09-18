@@ -8,15 +8,23 @@ A conversão da página é uma mensagem. O formulário é uma frase com lacunas,
 
 ### Requirement: Proteções
 
-O envio SHALL validar com zod no servidor, ignorar silenciosamente o honeypot preenchido e aplicar limite de taxa por origem (`src/lib/rate-limit.ts`).
+O envio SHALL validar com zod no servidor, ignorar silenciosamente o honeypot preenchido e aplicar limite de taxa por origem e por e-mail remetente (`src/lib/rate-limit.ts`). Toda mensagem válida SHALL passar por pontuação anti-spam no servidor (`src/lib/spam.ts`), sem serviço de terceiro: tempo entre o formulário aparecer e o envio, links, HTML, alfabeto não latino, texto de venda, nome estranho, e-mail descartável e texto repetido em 24 h. Um sinal fraco sozinho MUST NOT descartar; um sinal forte (muitos links, HTML, outro alfabeto) pode.
 
 #### Scenario: Honeypot
 - **WHEN** o campo oculto vem preenchido
 - **THEN** a ação responde como sucesso sem chamar o webhook
 
+#### Scenario: Pontuação alta
+- **WHEN** a soma dos sinais chega ao limiar de spam
+- **THEN** a ação responde como sucesso, não chama o webhook e a pessoa (ou o robô) não sabe que foi descartada
+
+#### Scenario: Pontuação intermediária
+- **WHEN** a soma dos sinais fica na zona de suspeita
+- **THEN** a mensagem é entregue com `spam.verdict = "suspect"` e as razões, e o endpoint decide o destino
+
 ### Requirement: Destino da mensagem
 
-Com `CONTACT_WEBHOOK_URL` definido, a mensagem SHALL ser enviada em JSON ao endpoint da Xiax. Sem ele, o formulário valida e avisa que o envio não está ligado, mostrando `NEXT_PUBLIC_CONTACT_EMAIL` quando existir. O site MUST NOT usar serviço de formulário de terceiro.
+Com `CONTACT_WEBHOOK_URL` definido, a mensagem SHALL ser enviada em JSON ao endpoint da Xiax, com `address` (IP de origem) e `spam` (veredito, pontuação e razões). Com `CONTACT_WEBHOOK_SECRET` definido, o corpo SHALL ir assinado em HMAC-SHA256 no header `x-xiax-signature`, para o endpoint recusar envios que não vieram do site. Sem `CONTACT_WEBHOOK_URL`, o formulário valida e avisa que o envio não está ligado, mostrando `NEXT_PUBLIC_CONTACT_EMAIL` quando existir. O site MUST NOT usar serviço de formulário de terceiro.
 
 #### Scenario: Webhook fora do ar
 - **WHEN** o endpoint responde erro ou não responde

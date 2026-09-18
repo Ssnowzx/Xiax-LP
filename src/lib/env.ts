@@ -14,6 +14,8 @@ const schema = z.object({
   NEXT_PUBLIC_CONTACT_EMAIL: optional(z.string().email()),
   /** Where the contact form posts. Xiax's own endpoint, never a third-party SaaS. */
   CONTACT_WEBHOOK_URL: optional(z.string().url()),
+  /** Shared secret; when set, every webhook body is signed with HMAC-SHA256. */
+  CONTACT_WEBHOOK_SECRET: optional(z.string().min(16)),
 })
 
 export type Env = z.infer<typeof schema>
@@ -22,4 +24,5 @@ export const env: Env = schema.parse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
   NEXT_PUBLIC_CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL,
   CONTACT_WEBHOOK_URL: process.env.CONTACT_WEBHOOK_URL,
+  CONTACT_WEBHOOK_SECRET: process.env.CONTACT_WEBHOOK_SECRET,
 })

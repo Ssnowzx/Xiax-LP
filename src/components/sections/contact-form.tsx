@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import type { ContactPayload, ContactResult } from '@/types'
@@ -48,6 +48,11 @@ function describedBy(id: string, hint: string | undefined, error: string | undef
 export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
   const [state, formAction, pending] = useActionState(action, IDLE)
   const failure = failureMessage(state, fallbackEmail)
+  // When the form appeared. A submit seconds later is not a person typing.
+  const [startedAt, setStartedAt] = useState('')
+  useEffect(() => {
+    setStartedAt(String(Date.now()))
+  }, [])
 
   if (state.status === 'sent') {
     return (
@@ -136,6 +141,8 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
           aria-describedby={describedBy('message', messageHint, messageError)}
         />
       </Field>
+
+      <input type="hidden" name="startedAt" value={startedAt} />
 
       {/* Honeypot: people never see it; bots fill it. */}
       <div className="hidden" aria-hidden="true">

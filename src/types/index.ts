@@ -100,6 +100,29 @@ export interface ContactPayload {
   readonly message: string
 }
 
+/** Why the spam filter scored a message. Names are for the log and the webhook, never for the person. */
+export type SpamReason =
+  | 'too-fast'
+  | 'no-timer'
+  | 'link'
+  | 'many-links'
+  | 'link-in-identity'
+  | 'markup'
+  | 'foreign-script'
+  | 'shouting'
+  | 'sales-pitch'
+  | 'heavy-pitch'
+  | 'odd-name'
+  | 'disposable-email'
+  | 'repeated'
+
+export interface SpamVerdict {
+  /** ham is delivered, suspect is delivered flagged, spam is dropped and answered as sent. */
+  readonly verdict: 'ham' | 'suspect' | 'spam'
+  readonly score: number
+  readonly reasons: readonly SpamReason[]
+}
+
 export type ContactResult =
   | { readonly status: 'idle' }
   | { readonly status: 'sent' }
