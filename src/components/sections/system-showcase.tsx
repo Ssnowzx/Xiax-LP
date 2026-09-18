@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import type { PortfolioItem } from '@/types'
 import { ClinicDemo } from '@/components/demo/clinic-demo'
+import { ScreenViewer } from '@/components/sections/screen-viewer'
 import { findFront } from '@/content/fronts'
 import { STATE_LABEL } from '@/content/portfolio'
 
@@ -9,21 +10,36 @@ interface SystemShowcaseProps {
   readonly item: PortfolioItem
   /** `h2` on the portfolio page, `h3` under the home page's own heading. */
   readonly headingLevel?: 'h2' | 'h3'
+  /** Position in the list and how many there are, when the list is shown whole. */
+  readonly position?: number | undefined
+  readonly count?: number | undefined
 }
 
+/** The Xclinicas is shown as a working simulation; every other system shows its real screens. */
+const SIMULATED_SLUG = 'xclinicas'
+
 /**
- * One system: a working simulation of it in the browser, the modules beside
- * it, and a small real screen as proof under the ledger of what is built.
+ * One system: the simulation or the real screens in a Xiax window, the
+ * modules beside it, and the ledger of what is built. Under the simulation, a
+ * small real screen is the proof that the system exists.
  */
-export function SystemShowcase({ item, headingLevel = 'h3' }: SystemShowcaseProps) {
+export function SystemShowcase({ item, headingLevel = 'h3', position, count }: SystemShowcaseProps) {
   const Heading = headingLevel
   const front = findFront(item.front)
-  const proof = item.screens?.screens[0]
+  const simulated = item.slug === SIMULATED_SLUG
+  const proof = simulated ? item.screens?.screens[0] : undefined
 
   return (
-    <article className="grid gap-satellite py-satellite">
+    <article className="showcase grid gap-satellite py-satellite">
       <div>
-        <Heading className="text-2xl lg:text-3xl">{item.name}</Heading>
+        {position && count ? (
+          <p className="data">
+            sistema {position} de {count}
+          </p>
+        ) : null}
+        <Heading className="sweep mt-2 text-2xl lg:text-3xl">
+          <span className="sweep-line">{item.name}</span>
+        </Heading>
         <p className="data mt-3">
           {STATE_LABEL[item.state]}
           {item.since ? `, no ar desde ${item.since}` : ''}
@@ -32,7 +48,8 @@ export function SystemShowcase({ item, headingLevel = 'h3' }: SystemShowcaseProp
         <p className="measure mt-clearance text-lede">{item.summary}</p>
       </div>
 
-      {item.slug === 'xclinicas' ? <ClinicDemo name={item.name} /> : null}
+      {simulated ? <ClinicDemo name={item.name} /> : null}
+      {!simulated && item.screens ? <ScreenViewer name={item.name} screens={item.screens} /> : null}
 
       <div className="grid gap-satellite lg:grid-cols-[2fr_3fr] lg:gap-x-core">
         <div>

@@ -815,3 +815,11 @@
     transition: none !important;
   }
 }
+
+/* The address and the tag of the window are read, not just seen: the page's
+   muted tone, never the product's ink on the page's ink. Last, so nothing
+   below the product palette overrides it. */
+.demo-window-bar .demo-window-url,
+.demo-window-bar .demo-window-tag {
+  color: var(--on-muted);
+}

@@ -54,6 +54,12 @@ export interface PortfolioScreens {
   readonly source: string
   /** ISO date of the capture, shown beside the screens. */
   readonly capturedAt: string
+  /**
+   * What was replaced before publishing, when the real screens carried
+   * personal data. Shown in the caption, so a real screen never pretends
+   * to show real people.
+   */
+  readonly redacted?: string
 }
 
 export interface PortfolioScreen extends PortfolioImage {
@@ -99,3 +105,14 @@ export type ContactResult =
   | { readonly status: 'sent' }
   | { readonly status: 'invalid'; readonly errors: Readonly<Partial<Record<keyof ContactPayload, string>>> }
   | { readonly status: 'failed'; readonly reason: 'unconfigured' | 'rate-limited' | 'upstream' }
+
+/** The six numbered parts of the sales page, in reading order. */
+export type PageSectionId = 'servico' | 'metodo' | 'frentes' | 'no-ar' | 'motor' | 'contato'
+
+export interface PageSection {
+  readonly id: PageSectionId
+  /** Short name, shown in the hero index, the section head and the header compass. */
+  readonly name: string
+  /** One sentence on what the reader finds there. */
+  readonly brief: string
+}
