@@ -15,6 +15,8 @@ const APPROVED_HEX = new Set(['#0b0b0c', '#ffffff', '#7b57d4', '#8e6fe0', '#6e6e
 const APPROVED_OKLCH = [
   'oklch(0.52 0.17 295)',
   'oklch(0.6 0.18 295)',
+  /* Soft paper for surfaces (docs/design-brief.md §6). */
+  'oklch(0.96 0.004 295)',
   'oklch(0.91 0.004 295)',
   'oklch(0.28 0.008 295)',
 ]

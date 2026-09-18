@@ -97,7 +97,7 @@ async function journey() {
     await page.screenshot({ path: `${OUT}/journey-${index + 2}-${stop.name}.png` })
   }
   // The grid under the pointer in the sections at the end of the page.
-  for (const [name, selector] of [['engine', '#motor-secao'], ['contact', '#contato']]) {
+  for (const [name, selector] of [['engine', '#motor'], ['contact', '#contato']]) {
     const section = page.locator(selector).first()
     if (!(await section.count())) continue
     await section.scrollIntoViewIfNeeded()

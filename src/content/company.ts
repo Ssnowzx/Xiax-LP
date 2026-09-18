@@ -26,6 +26,11 @@ export const COMPANY = {
     lede: 'Uma operação que roda em planilha, WhatsApp e três assinaturas vira um sistema só, construído em volta do seu processo. A IA entra onde tira trabalho de gente: confirmação, triagem, conciliação, resposta.',
     /** Column headings of the comparison table. Plain words, no jargon. */
     columns: { market: 'Software sob encomenda', xiax: 'Xiax' },
+    /** The whole table, after the pairs have been shown one by one. */
+    table: {
+      title: 'O que muda, lado a lado',
+      lede: 'Os cinco pares juntos, para comparar de uma vez como o software sob encomenda trabalha e como a Xiax trabalha.',
+    },
   },
   engine: [
     {

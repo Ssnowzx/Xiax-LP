@@ -1,4 +1,5 @@
 import { Container } from '@/components/layout/container'
+import { SectionHead } from '@/components/layout/section-head'
 import { CtaRail } from '@/components/ui/cta-rail'
 import { COMPANY } from '@/content/company'
 import { CTAS } from '@/content/ctas'
@@ -6,12 +7,13 @@ import { CTAS } from '@/content/ctas'
 /** Infrastructure as a position, not a footnote. */
 export function Engine() {
   return (
-    <section id="motor-secao" className="band-ink py-core lg:py-orbit" aria-labelledby="motor">
+    <section id="motor" className="py-core lg:py-orbit" aria-labelledby="motor-titulo">
       <Container>
+        <SectionHead id="motor" />
         <div className="grid gap-satellite lg:grid-cols-[2fr_3fr] lg:gap-x-core">
           <div>
             <span aria-hidden="true" data-core-slot="engine" className="core-slot mb-clearance block size-[30px]" />
-            <h2 id="motor" className="reveal text-3xl lg:text-4xl">
+            <h2 id="motor-titulo" className="reveal text-3xl lg:text-4xl">
               {COMPANY.lines.authority}
             </h2>
             <p className="measure mt-clearance text-lede text-on-muted">

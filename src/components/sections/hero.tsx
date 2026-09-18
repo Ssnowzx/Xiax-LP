@@ -1,21 +1,21 @@
-import { Loader } from '@/components/brand/loader'
 import { Mark } from '@/components/brand/mark'
 import { Container } from '@/components/layout/container'
 import { HeroField } from '@/components/motion/hero-field'
+import { PageIndex } from '@/components/sections/page-index'
 import { ButtonLink } from '@/components/ui/button'
 import { COMPANY } from '@/content/company'
 
 /**
  * The page's one orchestrated moment: the mark is born from the centre
  * outwards. Then its core leaves and travels the page. After that, motion
- * only answers the pointer.
+ * only answers the pointer. The index at the foot is the map of what follows.
  */
 export function Hero() {
   const { headline, lede, primaryCta, secondaryCta } = COMPANY.hero
 
   return (
     <HeroField>
-      <Container className="hero-stage grid gap-satellite py-satellite lg:grid-cols-[3fr_2fr] lg:items-center">
+      <Container className="hero-stage grid gap-satellite py-satellite lg:grid-cols-[3fr_2fr] lg:items-center lg:gap-y-clearance lg:py-clearance">
         <div className="order-2 lg:order-1">
           <h1 className="text-display">
             {headline.map((line) => (
@@ -43,10 +43,9 @@ export function Hero() {
             className="h-auto w-40 md:w-56 lg:w-96"
           />
         </div>
-        <p className="data order-3 flex items-center gap-3 lg:col-span-2">
-          <Loader variant="pulse" size={14} />
-          role para ver como entramos
-        </p>
+        <div className="order-3 lg:col-span-2">
+          <PageIndex />
+        </div>
       </Container>
     </HeroField>
   )

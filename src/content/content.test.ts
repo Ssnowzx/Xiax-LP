@@ -6,6 +6,7 @@ import { FRONTS, FRONT_OPTIONS, findFront } from '@/content/fronts'
 import { FORBIDDEN_CLAIMS } from '@/content/forbidden-claims'
 import { METHOD } from '@/content/method'
 import { PORTFOLIO, findPortfolioItem } from '@/content/portfolio'
+import { PAGE_SECTIONS, findSection, sectionNumber } from '@/content/sections'
 
 function collectStrings(value: unknown, out: string[] = []): string[] {
   if (typeof value === 'string') out.push(value)
@@ -139,5 +140,48 @@ describe('portfolio screens', () => {
     // ASSERT
     expect(withImage.length).toBeGreaterThan(0)
     expect(undescribed).toEqual([])
+  })
+})
+
+describe('page sections', () => {
+  it('should number six sectors with unique ids and a brief for each', () => {
+    // ARRANGE
+    const ids = PAGE_SECTIONS.map((section) => section.id)
+
+    // ACT
+    const unique = new Set(ids)
+    const shortBriefs = PAGE_SECTIONS.filter((section) => section.brief.length < 20)
+
+    // ASSERT
+    expect(PAGE_SECTIONS).toHaveLength(6)
+    expect(unique.size).toBe(6)
+    expect(shortBriefs).toEqual([])
+  })
+
+  it('should format positions as two-digit numbers and find a section by id', () => {
+    // ARRANGE
+    const id = 'no-ar'
+
+    // ACT
+    const found = findSection(id)
+
+    // ASSERT
+    expect(sectionNumber(0)).toBe('01')
+    expect(found?.position).toBe(3)
+    expect(found?.section.name).toBe('O que está no ar')
+  })
+})
+
+describe('portfolio captures', () => {
+  it('should say what was replaced whenever a real screen carried personal data', () => {
+    // ARRANGE
+    const gescon = findPortfolioItem('gestao-de-convenios')
+
+    // ACT
+    const note = gescon?.screens?.redacted
+
+    // ASSERT
+    expect(gescon?.state).toBe('production')
+    expect(note).toMatch(/substituídos\.$/)
   })
 })

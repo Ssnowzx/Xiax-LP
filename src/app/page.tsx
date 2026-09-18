@@ -25,7 +25,7 @@ export default function HomePage() {
       <Fronts />
       <PortfolioFeature />
       <Engine />
-      <ContactSection />
+      <ContactSection indexed />
     </>
   )
 }

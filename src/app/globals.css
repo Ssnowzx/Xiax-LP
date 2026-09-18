@@ -23,6 +23,9 @@
 @theme {
   --color-ink: #0b0b0c;
   --color-paper: #ffffff;
+  /* Paper for surfaces: a step below white, cool like the ink, so a sector
+     of paper does not glare. Text on ink stays #ffffff. Founder, 17/09/2026. */
+  --color-paper-soft: oklch(0.96 0.004 295);
   --color-core: oklch(0.52 0.17 295);
   --color-core-lift: oklch(0.6 0.18 295);
   --color-muted: #6e6e72;
@@ -262,19 +265,24 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    padding-bottom: 0.5rem;
+    /* Room below and to the right for the plate set off behind the last card,
+       and the snap keeps the first card off the edge of the screen. */
+    padding-bottom: 1rem;
     margin-inline: calc(-1 * var(--spacing-margin));
-    padding-inline: var(--spacing-margin);
+    padding-inline: var(--spacing-margin) calc(var(--spacing-margin) + 0.75rem);
+    scroll-padding-inline: var(--spacing-margin);
     -webkit-overflow-scrolling: touch;
   }
   .front-rail::-webkit-scrollbar {
     display: none;
   }
+  .front-rail:focus-visible {
+    outline: 2px solid var(--on);
+    outline-offset: -2px;
+  }
   .front-rail > .front-cell {
     flex: 0 0 78%;
     scroll-snap-align: start;
-    border-top: 1px solid var(--on);
-    padding-top: var(--spacing-margin);
   }
   .front-hint {
     margin-top: calc(-1 * var(--spacing-clearance));
@@ -299,18 +307,9 @@
     .front-rail {
       display: contents;
     }
-    .front-rail > .front-cell {
-      border-top: 0;
-      padding-top: 0;
-    }
   }
 
   @media (min-width: 64rem) {
-    .fronts-section {
-      min-height: 100svh;
-      display: grid;
-      align-content: center;
-    }
     .orbit-grid {
       grid-template-columns: 22fr 7fr 30fr 7fr 22fr;
       grid-template-rows: auto auto auto;
@@ -344,11 +343,13 @@
 
   /* -- The mark at page scale: four outlined satellites behind everything,
         opening as the page scrolls and closing again at the end. ---------- */
+  /* z -3: the papers of the engine band and the contact card (z -2) cover
+     the shell, and the travelling core (z -1) stays above both. */
   .page-shell {
     display: none;
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -3;
     pointer-events: none;
   }
   @media (min-width: 64rem) {
@@ -396,12 +397,14 @@
     }
   }
 
-  /* -- A band of the other polarity. The section flips its own tokens, so
-        every utility inside just works; the background sits at z -2 so the
-        travelling core still shows through. ------------------------------- */
+  /* -- A sector of the other polarity: paper on the dark page. The sector
+        flips its own tokens, so every utility inside just works; the paper is
+        painted at z -2 so the travelling core still shows through. Sectors
+        02 (método) and 04 (no ar) are paper, the rest ink: the reader feels
+        the subject change on the page itself. ----------------------------- */
   .band-ink {
     position: relative;
-    --surface: var(--color-paper);
+    --surface: var(--color-paper-soft);
     --on: var(--color-ink);
     --on-muted: var(--color-muted);
     --accent: var(--color-core);
@@ -415,33 +418,6 @@
     inset: 0;
     z-index: -2;
     background: var(--surface);
-  }
-
-  /* -- The comparison reads as stacked pairs where two columns cannot fit. -- */
-  @media (max-width: 47.99rem) {
-    .comparison thead {
-      display: none;
-    }
-    .comparison tr {
-      display: grid;
-      gap: 0.25rem;
-      padding-block: var(--spacing-margin);
-    }
-    .comparison td {
-      display: block;
-      padding: 0;
-    }
-    .comparison td::before {
-      content: attr(data-label);
-      display: block;
-      font-family: var(--font-mono);
-      font-size: var(--text-data);
-      color: var(--on-muted);
-      margin-bottom: 0.125rem;
-    }
-    .comparison td + td::before {
-      margin-top: 0.5rem;
-    }
   }
 
   /* -- The action under the thumb on phones. ------------------------------- */
@@ -593,33 +569,6 @@
   .mark-progress[data-step='3'] [data-piece='satellite']:nth-of-type(-n + 3),
   .mark-progress[data-step='4'] [data-piece='satellite']:nth-of-type(-n + 4) {
     fill: var(--on);
-  }
-
-  /* -- Fronts settle into their corners as the section enters the viewport. */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) and (min-width: 64rem) {
-      .orbit-grid [data-cell]:not([data-cell='core']) {
-        animation: settle linear both;
-        animation-timeline: view();
-        animation-range: entry 5% entry 60%;
-      }
-      .orbit-grid [data-cell='tl'] {
-        --dx: 28px;
-        --dy: 28px;
-      }
-      .orbit-grid [data-cell='tr'] {
-        --dx: -28px;
-        --dy: 28px;
-      }
-      .orbit-grid [data-cell='br'] {
-        --dx: -28px;
-        --dy: -28px;
-      }
-      .orbit-grid [data-cell='bl'] {
-        --dx: 28px;
-        --dy: -28px;
-      }
-    }
   }
 
   /* -- A framed screen that tilts a few degrees toward the pointer. ------- */
@@ -914,13 +863,67 @@
   }
   .slot-note {
     margin-top: 1.5cqw;
-    font-size: 4.8cqw;
+    font-size: max(0.75rem, 4.8cqw);
     line-height: 1.35;
     opacity: 0.8;
   }
+  /* Each front is a satellite of the mark: a plate of paper on the ink,
+     with a second plate of ink-grey set off behind it. Depth by geometry,
+     the way the mark is built, never by shadow: the brand carries none.
+     Both plates are pseudo-elements below the content, the offset one
+     first, so the paper always covers it where they overlap. */
   .front-cell {
+    --surface: var(--color-paper-soft);
+    --on: var(--color-ink);
+    --on-muted: var(--color-muted);
+    --accent: var(--color-core);
+    --on-accent: var(--color-paper);
+    --plate-offset: 0.75rem;
+    /* The inner rhythm of a plate, in variables so the pinned stage can
+       tighten it with the height of the screen. */
+    --front-pad: var(--spacing-margin);
+    --front-pad-x: var(--spacing-margin);
+    --front-loader: 3rem;
+    --front-gap-title: var(--spacing-clearance);
+    --front-gap-data: var(--spacing-margin);
     position: relative;
     z-index: 1;
+    padding: var(--front-pad) var(--front-pad-x);
+    color: var(--on);
+  }
+  .front-cell .loader {
+    width: var(--front-loader);
+    height: var(--front-loader);
+  }
+  .front-title {
+    margin-top: var(--front-gap-title);
+    font-size: var(--front-title-size, var(--text-xl));
+    line-height: 1.2;
+  }
+  .front-promise {
+    margin-top: 0.5rem;
+    font-size: var(--front-promise-size, var(--text-sm));
+    line-height: 1.5;
+  }
+  .front-examples {
+    margin-top: var(--front-gap-data);
+  }
+  .front-cell::before,
+  .front-cell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .front-cell::before {
+    z-index: -2;
+    translate: var(--plate-offset) var(--plate-offset);
+    background: var(--hairline);
+  }
+  .front-cell::after {
+    z-index: -1;
+    background: var(--surface);
+    border: 1px solid var(--on);
   }
 
   /* A small real screen as proof, sharp because it is small. */
@@ -943,96 +946,6 @@
     }
   }
 
-  /* -- The contact form as a sentence with blanks. ------------------------- */
-  .story {
-    display: grid;
-    gap: var(--spacing-clearance);
-  }
-  .story-line {
-    font-size: var(--text-lede);
-    line-height: 2;
-    text-wrap: pretty;
-  }
-  .blank {
-    position: relative;
-    display: inline-block;
-    max-width: 100%;
-  }
-  .blank-input {
-    display: inline-block;
-    max-width: 100%;
-    border: 0;
-    border-bottom: 1px solid var(--on);
-    background: transparent;
-    color: var(--on);
-    font: inherit;
-    line-height: 1.4;
-    padding: 0 0.25rem;
-    min-width: 6ch;
-    field-sizing: content;
-  }
-  .blank-input::placeholder {
-    color: var(--on-muted);
-  }
-  .blank-input:focus {
-    outline: none;
-    border-bottom-width: 2px;
-  }
-  .blank[data-invalid='true'] .blank-input {
-    border-bottom-width: 2px;
-    border-bottom-style: dashed;
-  }
-  .blank-select {
-    appearance: none;
-    padding-right: 1.25rem;
-    cursor: pointer;
-  }
-  /* The select's marker is the brand's atom, drawn by the wrapper. */
-  .blank:has(.blank-select)::after {
-    content: '';
-    position: absolute;
-    right: 0.35rem;
-    top: 50%;
-    width: 0.375rem;
-    height: 0.375rem;
-    background: var(--on);
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-  .story-text {
-    display: block;
-    width: 100%;
-    min-height: 7rem;
-    border: 0;
-    border-bottom: 1px solid var(--on);
-    background: transparent;
-    color: var(--on);
-    font: inherit;
-    font-size: var(--text-lede);
-    line-height: 1.6;
-    padding: 0.5rem 0.25rem;
-    resize: vertical;
-    field-sizing: content;
-  }
-  .story-text::placeholder {
-    color: var(--on-muted);
-  }
-  .story-text:focus {
-    outline: none;
-    border-bottom-width: 2px;
-  }
-  .story-text[aria-invalid='true'] {
-    border-bottom-width: 2px;
-    border-bottom-style: dashed;
-  }
-  .story-errors {
-    display: grid;
-    gap: 0.25rem;
-    font-size: var(--text-sm);
-    border-left: 2px solid var(--on);
-    padding-left: var(--spacing-margin);
-  }
-
   /* -- Violet over the words: the core's colour sweeping across the text as
         the page scrolls, the letters darkening where it has passed. -------- */
   .highlight {
@@ -1045,6 +958,24 @@
     padding: 0.04em 0.12em;
     margin: -0.04em -0.12em;
   }
+  /* The same sweep as an underline, for the paper sectors: violet drawn
+     under the words as the page scrolls, the words themselves untouched.
+     (Not named `underline`: that is Tailwind's text-decoration utility.) */
+  .sweep-line {
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-size: var(--sweep) 0.14em;
+    background-position: 0 100%;
+    padding-bottom: 0.08em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .link-accent {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 0.12em;
+    text-underline-offset: 0.2em;
+  }
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
       .sweep {
@@ -1055,10 +986,9 @@
     }
   }
 
-  /* -- The violet band across the top of the contact section. ------------- */
-  /* -- The contact form in a card. ----------------------------------------- */
-  /* No fill: the travelling core sits behind the page and must show through
-     the card when it docks on the submit button. */
+  /* -- The contact form in a paper card. ----------------------------------- */
+  /* The card flips polarity with .band-ink: its paper is painted at z -2, so
+     the travelling core (z -1) still shows through the submit button. */
   .contact-card {
     position: relative;
     border: 1px solid var(--on);
@@ -1077,53 +1007,6 @@
   }
   .contact-card-head .data {
     font-size: var(--text-lede);
-  }
-
-  /* -- The comparison as a story: the market line is struck through as the
-        Xiax line steps forward, driven by scroll. ------------------------- */
-  .struck {
-    position: relative;
-    display: inline;
-  }
-  .struck::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.72em;
-    height: 1px;
-    width: 0;
-    background: var(--on-muted);
-  }
-  .stepping {
-    position: relative;
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    font-size: var(--text-lede);
-    line-height: var(--text-lede--line-height);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-  .stepping i {
-    flex: none;
-    width: 0.625rem;
-    height: 0.625rem;
-    background: var(--on);
-    transform: translateY(-0.1em);
-  }
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .struck::after {
-        animation: strike linear both;
-        animation-timeline: view();
-        animation-range: entry 40% entry 90%;
-      }
-      .stepping {
-        animation: step-in linear both;
-        animation-timeline: view();
-        animation-range: entry 45% entry 95%;
-      }
-    }
   }
 
   /* -- The manual's loaders. ----------------------------------------------- */
@@ -1244,23 +1127,87 @@
 }
 
 @layer components {
-  /* Form fields. An invalid one thickens its border; there is no red in the brand. */
+  /* Form fields: a box with the label above it. An invalid one thickens its
+     border; there is no red in the brand. */
+  .contact-form {
+    display: grid;
+    gap: var(--spacing-clearance);
+  }
+  .contact-grid {
+    display: grid;
+    gap: var(--spacing-clearance);
+  }
+  @media (min-width: 48rem) {
+    .contact-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .field-block {
+    display: grid;
+    gap: 0.375rem;
+    align-content: start;
+  }
+  .field-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
   .field {
-    margin-top: 0.5rem;
     display: block;
     width: 100%;
     border: 1px solid var(--on-muted);
     background: var(--surface);
     color: var(--on);
     padding: 0.75rem 1rem;
+    font: inherit;
     font-size: var(--text-base);
+    line-height: 1.5;
+  }
+  textarea.field {
+    resize: vertical;
+    min-height: 8rem;
   }
   .field:focus {
+    outline: none;
     border-color: var(--on);
+    border-width: 2px;
+    padding: calc(0.75rem - 1px) calc(1rem - 1px);
   }
   .field[aria-invalid='true'] {
     border-color: var(--on);
     border-width: 2px;
+    border-style: dashed;
+    padding: calc(0.75rem - 1px) calc(1rem - 1px);
+  }
+  .field-select-wrap {
+    position: relative;
+    display: block;
+  }
+  .field-select {
+    appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+  /* The select's marker is the brand's atom, drawn by the wrapper. */
+  .field-select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--on);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .field-error {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+  .contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-clearance);
   }
 }
 
@@ -1277,6 +1224,14 @@
     line-height: var(--text-data--line-height);
     font-variant-numeric: tabular-nums;
     color: var(--on-muted);
+  }
+  /* The numbers that guide the reading are violet, and the compass's is ink.
+     Here, in the utilities layer, because `.data` sets the colour here too. */
+  .section-index .data {
+    color: var(--accent);
+  }
+  .compass-label .data {
+    color: var(--on);
   }
 }
 
@@ -1303,13 +1258,6 @@
   50% {
     transform: scale(0.55);
     opacity: 0.45;
-  }
-}
-
-@keyframes settle {
-  from {
-    transform: translate(var(--dx), var(--dy));
-    opacity: 0.4;
   }
 }
 
@@ -1453,12 +1401,14 @@
   }
 }
 
+/* The wipe ends a little below the box, so an underline drawn under the last
+   line of a heading is not cut off by the resting clip. */
 @keyframes wipe-in {
   from {
-    clip-path: inset(0 100% 0 0);
+    clip-path: inset(0 100% -0.35em 0);
   }
   to {
-    clip-path: inset(0 0 0 0);
+    clip-path: inset(0 0 -0.35em 0);
   }
 }
 
@@ -1485,5 +1435,889 @@
   }
   to {
     --sweep: 100%;
+  }
+}
+
+@layer components {
+  /* -- Sectors. Each numbered part of the page opens with a rule, its number
+        and name, and one sentence on what is inside. The number is the order
+        of the argument, so the reader always knows where they are. --------- */
+  main > section {
+    scroll-margin-top: var(--spacing-satellite);
+  }
+  .section-head {
+    display: grid;
+    gap: 0.75rem var(--spacing-core);
+    border-top: 1px solid var(--on);
+    padding-top: var(--spacing-margin);
+    margin-bottom: var(--spacing-satellite);
+  }
+  @media (min-width: 64rem) {
+    .section-head {
+      grid-template-columns: 2fr 3fr;
+      align-items: baseline;
+    }
+  }
+  .section-index {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+  .section-brief {
+    max-width: 40rem;
+    font-size: var(--text-sm);
+    color: var(--on-muted);
+  }
+
+  /* -- The compass in the header: six cells, one per sector. The sector on
+        screen is filled, the ones already read are dimmed, the rest are
+        outlined; the name beside them says it in words. -------------------- */
+  .compass {
+    display: none;
+    align-items: center;
+    gap: 0.875rem;
+    min-width: 0;
+  }
+  @media (min-width: 48rem) {
+    .compass {
+      display: flex;
+    }
+  }
+  .compass-track {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .compass-cell {
+    display: block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 1px solid var(--on-muted);
+    transition:
+      background-color var(--dur-quick) var(--ease-standard),
+      border-color var(--dur-quick) var(--ease-standard);
+  }
+  .compass-cell[data-read='true'] {
+    background: var(--on-muted);
+    border-color: var(--on-muted);
+  }
+  .compass-cell[aria-current] {
+    background: var(--on);
+    border-color: var(--on);
+  }
+  .compass-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 20ch;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* -- The index at the foot of the hero: six cells of a ruled grid, each
+        with its number, its name and one sentence. The map before the walk. */
+  .page-index {
+    display: grid;
+    gap: var(--spacing-margin);
+    border-top: 1px solid var(--hairline);
+    padding-top: var(--spacing-margin);
+  }
+  .page-index-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    border: 1px solid var(--hairline);
+    background: var(--hairline);
+  }
+  @media (min-width: 48rem) {
+    .page-index-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .page-index-list {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  .page-index-list li {
+    display: grid;
+  }
+  .page-index-item {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    align-content: start;
+    gap: 0.625rem;
+    padding: var(--spacing-clearance);
+    background: var(--surface);
+    font-size: var(--text-sm);
+    line-height: 1.35;
+  }
+  /* The number is the guide: large, violet, the colour of where to look. */
+  .page-index-number {
+    position: relative;
+    font-size: var(--text-2xl);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .page-index-name {
+    position: relative;
+    font-size: var(--text-base);
+    font-weight: 700;
+  }
+  .page-index-brief {
+    position: relative;
+    color: var(--on-muted);
+    text-wrap: pretty;
+  }
+  .page-index-item:hover .page-index-name,
+  .page-index-item:focus-visible .page-index-name {
+    text-decoration: underline;
+  }
+
+  /* -- Real screens in a Xiax window: one tab per module. While nobody has
+        taken the tabs, the screens advance on the loader's clock and the
+        active tab's underline fills as the clock runs. -------------------- */
+  /* A grid item never shrinks below its content unless told to; the tab strip
+     would otherwise set the page's width on a phone (it scrolls instead). */
+  .viewer,
+  .viewer-window {
+    min-width: 0;
+  }
+  .viewer-window {
+    border: 1px solid var(--on);
+    background: var(--surface);
+  }
+  .viewer-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-margin);
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--on);
+  }
+  .viewer-dots {
+    display: inline-flex;
+    gap: 0.375rem;
+  }
+  .viewer-dots i {
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--on-muted);
+  }
+  .viewer-url {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .viewer-tag {
+    flex: none;
+    margin-left: auto;
+  }
+  @media (max-width: 47.99rem) {
+    .viewer-tag {
+      display: none;
+    }
+  }
+  .viewer-tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .viewer-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .viewer-tab {
+    position: relative;
+    flex: none;
+    padding: 0.75rem 1rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--on-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--dur-quick) var(--ease-standard);
+  }
+  .viewer-tab[aria-selected='true'] {
+    color: var(--on);
+  }
+  .viewer-tab::after {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: -1px;
+    height: 2px;
+    background: var(--on);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+  }
+  .viewer-tab[aria-selected='true']::after {
+    transform: scaleX(1);
+  }
+  .viewer[data-playing='true'] .viewer-tab[aria-selected='true']::after {
+    animation: viewer-advance var(--advance, 4800ms) linear both;
+  }
+  .viewer-stage {
+    position: relative;
+    overflow: hidden;
+  }
+  .viewer-panel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-standard);
+  }
+  .viewer-panel[data-active='true'] {
+    position: relative;
+    opacity: 1;
+  }
+  .viewer-panel img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  /* On a phone a whole desktop screen squeezed to the width is unreadable:
+     the screen keeps a legible height and pans sideways under the finger. */
+  @media (max-width: 47.99rem) {
+    /* Width and height both set, so the inline aspect ratio no longer
+       decides the width. */
+    .viewer-stage {
+      width: 100%;
+      height: min(62svh, 30rem);
+    }
+    .viewer-panel {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .viewer-panel::-webkit-scrollbar {
+      display: none;
+    }
+    .viewer-panel[data-active='true'] {
+      height: 100%;
+    }
+    .viewer-panel img {
+      width: auto;
+      max-width: none;
+      height: 100%;
+    }
+  }
+  .viewer-hint {
+    margin-bottom: calc(-1 * var(--spacing-margin) + 0.5rem);
+  }
+  /* The panel is the tab's target and, on a phone, a region that scrolls: reachable and marked when focused. */
+  .viewer-panel:focus-visible {
+    outline: 2px solid var(--on);
+    outline-offset: -2px;
+  }
+
+  /* -- Systems in the ledger, one after the other, each behind a rule. ---- */
+  .showcase + .showcase {
+    border-top: 1px solid var(--on);
+  }
+}
+
+@keyframes viewer-advance {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@layer components {
+  /* -- Leaning toward the pointer, with the engineering grid under it: the
+        gesture of the hero's satellites, applied to a card. ---------------- */
+  .lean {
+    transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transform-style: preserve-3d;
+    transition: transform var(--dur-quick) var(--ease-standard);
+  }
+  .lean-grid {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--on-muted);
+    opacity: 0;
+    -webkit-mask-image: radial-gradient(circle 180px at var(--mx, -999px) var(--my, -999px), black 25%, transparent 100%);
+    mask-image: radial-gradient(circle 180px at var(--mx, -999px) var(--my, -999px), black 25%, transparent 100%);
+    transition: opacity var(--dur-quick) var(--ease-standard);
+    pointer-events: none;
+  }
+  [data-hot='true'] > .lean-grid {
+    opacity: 0.5;
+  }
+
+  /* -- Runways: the empty track a pinned stage travels along, one snap stop
+        per step. Sizes are per stage. Only a wide screen has one. --------- */
+  .runway {
+    --stop: 60vh;
+    --intro: 40vh;
+    --outro: 100vh;
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .runway[data-active='true'] {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+  /* Each stop is a snap position the scroll must rest on and cannot fly
+     past: one gesture, one step. The intro and outro are rest positions the
+     scroll may pass. The intro must be taller than the stop line of the hook
+     (30vh): the step back from the first stop lands on the intro's top, and
+     the first stop has to be below the line there, or there is no way back. */
+  .runway-stop {
+    height: var(--stop);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .runway-intro {
+    height: var(--intro);
+    scroll-snap-stop: normal;
+  }
+  .runway-outro {
+    height: var(--outro);
+    scroll-snap-stop: normal;
+  }
+  /* The fronts let the page go at the fourth (`releaseAtLast`), so the
+     runway ends exactly where the stage lets go: one stage plus the header
+     space past the last stop, and a small guard that keeps the stage pinned
+     through the tail of the gesture that brought the fourth. The outro is
+     that end, with no height of its own: a rest position for a touch fling,
+     never a stop of the lock. The stage's height comes from the component. */
+  .fronts-runway {
+    --stop: 40vh;
+    --intro: 40vh;
+    --outro: 0px;
+    --guard: 4rem;
+  }
+  .fronts-runway .runway-outro {
+    margin-top: calc(var(--stage-height, calc(100svh - 8rem)) + 6rem - var(--stop) + var(--guard));
+  }
+
+  /* -- The fronts around the core. A wide screen pins the composition, in
+        two rows with the core between them so it fits the screen whole, and
+        each front is born from the centre on its stop, the way the manual's
+        loader grows outward. ------------------------------------------------ */
+  @media (min-width: 64rem) {
+    .fronts[data-mode='stage'] .fronts-stage {
+      position: sticky;
+      top: 6rem;
+    }
+    .fronts[data-mode='stage'] .orbit-grid {
+      grid-template-rows: 1fr 1fr;
+      grid-template-areas:
+        'tl . core . tr'
+        'bl . core . br';
+      row-gap: clamp(2rem, 6svh, var(--spacing-satellite));
+      max-height: calc(100svh - 7.5rem);
+    }
+    /* The four plates must fit the screen whole: their rhythm runs on a
+       line from tight at 700px of height to comfortable at 760px, capped
+       above, and the side padding stays narrow so the promise keeps to
+       three lines. */
+    .fronts[data-mode='stage'] .front-cell {
+      --front-pad: clamp(0.75rem, calc(6.67svh - 2.04rem), 1.5rem);
+      --front-pad-x: clamp(0.75rem, 1vw, 1.25rem);
+      --front-loader: clamp(2rem, calc(10svh - 2.375rem), 3rem);
+      --front-gap-title: clamp(0.625rem, calc(7.8svh - 2.7rem), 1.75rem);
+      --front-gap-data: clamp(0.5rem, calc(6.2svh - 2.1rem), 1.5rem);
+      --front-title-size: clamp(1.0625rem, 2.6svh, 1.25rem);
+      --front-promise-size: clamp(0.8125rem, 1.85svh, 0.875rem);
+    }
+    .fronts[data-mode='stage'] .orbit-grid [data-cell='core'] {
+      align-self: center;
+    }
+    .fronts[data-mode='stage'] .front-cell {
+      opacity: 0;
+      translate: var(--fx, 0) var(--fy, 0);
+      scale: 0.94;
+      transition:
+        opacity 640ms var(--ease-standard),
+        translate 640ms var(--ease-standard),
+        scale 640ms var(--ease-standard);
+    }
+    .fronts[data-mode='stage'] .front-cell[data-state='arrived'] {
+      opacity: 1;
+      translate: 0 0;
+      scale: 1;
+    }
+    .fronts[data-mode='stage'] [data-cell='tl'] {
+      --fx: 4rem;
+      --fy: 4rem;
+    }
+    .fronts[data-mode='stage'] [data-cell='tr'] {
+      --fx: -4rem;
+      --fy: 4rem;
+    }
+    .fronts[data-mode='stage'] [data-cell='br'] {
+      --fx: -4rem;
+      --fy: -4rem;
+    }
+    .fronts[data-mode='stage'] [data-cell='bl'] {
+      --fx: 4rem;
+      --fy: -4rem;
+    }
+  }
+
+  /* -- The comparison, one pair at a time. The list is the content and the
+        record: a pair already shown stays struck and lit. On a wide screen
+        the section's opening screen pins, the viewport is veiled, and a deck
+        of paper cards plays in the centre; on a phone the pair nearest the
+        middle is in focus. ------------------------------------------------- */
+  .compare {
+    position: relative;
+  }
+  .compare-table {
+    margin-top: var(--spacing-satellite);
+  }
+  .compare-table-head {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: var(--spacing-clearance);
+  }
+  .compare-table-title {
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+  }
+  .compare-table-lede {
+    max-width: 44rem;
+    color: var(--on-muted);
+  }
+  .compare-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-clearance);
+    padding-bottom: var(--spacing-margin);
+    border-bottom: 1px solid var(--on);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+  .compare-head span:first-child {
+    color: var(--on-muted);
+  }
+  .compare-list {
+    display: grid;
+  }
+  .compare-row {
+    --sweep: 0%;
+    display: grid;
+    gap: 0.5rem;
+    padding-block: var(--spacing-clearance);
+    border-bottom: 1px solid var(--hairline);
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      filter var(--dur-base) var(--ease-standard),
+      background-color var(--dur-base) var(--ease-standard),
+      color var(--dur-base) var(--ease-standard);
+  }
+  .compare-label {
+    display: block;
+    margin-bottom: 0.125rem;
+  }
+  @media (min-width: 48rem) {
+    .compare-row {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-clearance);
+      align-items: start;
+    }
+    /* Two columns have the head as their label; the row labels stay for readers who cannot see. */
+    .compare-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .compare-head {
+      display: none;
+    }
+  }
+  .compare-market {
+    font-size: var(--text-sm);
+    color: var(--on-muted);
+  }
+  .compare-market .compare-text {
+    position: relative;
+    display: inline;
+  }
+  /* The market line is struck when its pair has been shown. */
+  .compare-market .compare-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    height: 1px;
+    width: 0;
+    background: var(--on-muted);
+    transition: width 640ms var(--ease-standard);
+  }
+  .compare-row[data-state='read'] .compare-market .compare-text::after,
+  .compare-row[data-state='open'] .compare-market .compare-text::after {
+    width: 100%;
+  }
+  .compare-xiax .compare-text {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: var(--text-lede);
+    line-height: var(--text-lede--line-height);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    opacity: 0.35;
+    translate: -0.5rem 0;
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      translate var(--dur-base) var(--ease-standard);
+  }
+  .compare-xiax i {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    background: currentColor;
+    transform: translateY(-0.1em);
+  }
+  .compare-row[data-state='read'] .compare-xiax .compare-text,
+  .compare-row[data-state='open'] .compare-xiax .compare-text {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Phone and tablet: the pair nearest the middle becomes a paper card with
+     the violet sweep; the ones ahead wait out of focus. */
+  .compare[data-mode='list'] .compare-row[data-state='ahead'] {
+    opacity: 0.45;
+    filter: blur(1.5px);
+  }
+  .compare[data-mode='list'] .compare-row[data-state='read'] {
+    opacity: 0.7;
+  }
+  .compare[data-mode='list'] .compare-row[data-state='open'] {
+    --surface: var(--color-paper-soft);
+    --on: var(--color-ink);
+    --on-muted: var(--color-muted);
+    --accent: var(--color-core);
+    --on-accent: var(--color-paper);
+    --hairline: var(--color-rule);
+    animation: sweep 800ms var(--ease-standard) 240ms both;
+    margin-inline: calc(-1 * var(--spacing-margin));
+    padding-inline: var(--spacing-margin);
+    background: var(--surface);
+    color: var(--on);
+    border-bottom-color: var(--surface);
+  }
+
+  /* Wide screen: the opening screen pins for half a step, one step per pair
+     and half a step more, then lets go; the table follows. */
+  .compare-veil,
+  .compare-deck {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .compare[data-mode='stage'] .compare-stage {
+      position: sticky;
+      top: 6rem;
+    }
+    .compare[data-mode='stage'] .compare-veil {
+      display: block;
+    }
+    .compare[data-mode='stage'] .compare-deck {
+      display: grid;
+    }
+    /* After the runway the table is a sheet of paper that rises over the
+       pinned opening screen and covers it; the stage lets go at its end. */
+    .compare[data-mode='stage'] .compare-table {
+      --surface: var(--color-paper-soft);
+      --on: var(--color-ink);
+      --on-muted: var(--color-muted);
+      --accent: var(--color-core);
+      --on-accent: var(--color-paper);
+      --hairline: var(--color-rule);
+      position: relative;
+      z-index: 2;
+      margin-top: 0;
+      padding: var(--spacing-clearance) var(--spacing-clearance) var(--spacing-margin);
+      background: var(--surface);
+      color: var(--on);
+      transition: opacity var(--dur-base) var(--ease-standard);
+    }
+    /* While the deck is still playing (a fast scroll runs ahead of the lock),
+       the sheet waits unseen and appears once the last card has closed. */
+    .compare[data-mode='stage'][data-open='true'] .compare-table {
+      opacity: 0;
+    }
+  }
+  /* The veil blurs the whole page under the header while the deck is open. */
+  .compare-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    visibility: hidden;
+    opacity: 0;
+    background: color-mix(in oklab, var(--surface) 55%, transparent);
+    /* Standard property only: the build adds the -webkit- prefix itself and
+       drops the standard one when both are written by hand. */
+    backdrop-filter: blur(10px);
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      visibility 0s linear var(--dur-base);
+    pointer-events: none;
+  }
+  .compare[data-open='true'] .compare-veil {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity var(--dur-base) var(--ease-standard);
+  }
+  /* The deck: five paper cards stacked in the centre of the screen. The one
+     in front is the pair being read; the ones already read peek from behind
+     it. No shadow: paper, ink outline and the veil behind. Violet where the
+     difference is: the atom, the sweep over the Xiax line, the filled cells. */
+  .compare-deck {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 31;
+    width: min(calc(100vw - 3rem), 46rem);
+    translate: -50% -50%;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      visibility 0s linear var(--dur-base),
+      transform var(--dur-quick) var(--ease-standard);
+    pointer-events: none;
+  }
+  .compare[data-open='true'] .compare-deck {
+    visibility: visible;
+    opacity: 1;
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      transform var(--dur-quick) var(--ease-standard);
+  }
+  .compare-card {
+    --surface: var(--color-paper-soft);
+    --on: var(--color-ink);
+    --on-muted: var(--color-muted);
+    --accent: var(--color-core);
+    --on-accent: var(--color-paper);
+    --hairline: var(--color-rule);
+    grid-area: 1 / 1;
+    align-self: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2.5rem 2.75rem;
+    background: var(--surface);
+    color: var(--on);
+    border: 1px solid var(--on);
+    opacity: 0;
+    translate: 0 1.5rem;
+    scale: 0.98;
+    /* The card that comes in turns opaque at once, while it still rises, so
+       it covers the one going back instead of showing through it. */
+    transition:
+      opacity var(--dur-quick) var(--ease-standard),
+      translate 480ms var(--ease-standard),
+      scale 480ms var(--ease-standard);
+  }
+  .compare-card[data-position='front'] {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    z-index: 3;
+  }
+  .compare-card[data-position='behind-1'] {
+    opacity: 1;
+    translate: 0 -0.875rem;
+    scale: 0.96;
+    z-index: 2;
+  }
+  .compare-card[data-position='behind-2'] {
+    opacity: 1;
+    translate: 0 -1.75rem;
+    scale: 0.92;
+    z-index: 1;
+  }
+  .compare-card[data-position='gone'] {
+    opacity: 0;
+    translate: 0 -2.5rem;
+    scale: 0.88;
+    z-index: 0;
+  }
+  .compare-card[data-position='ahead'] {
+    opacity: 0;
+    translate: 0 1.5rem;
+    scale: 0.98;
+    z-index: 0;
+  }
+  /* The body drives the violet sweep over the Xiax line; the front card replays it. */
+  .compare-card-body {
+    position: relative;
+    --sweep: 0%;
+  }
+  .compare-card[data-position='front'] .compare-card-body {
+    animation: sweep 800ms var(--ease-standard) 480ms both;
+  }
+  .compare-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .compare-card-market {
+    margin-top: 1.25rem;
+    font-size: var(--text-base);
+    color: var(--on-muted);
+  }
+  .compare-card-market span {
+    position: relative;
+  }
+  .compare-card-market span::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    height: 1px;
+    width: 0;
+    background: var(--on-muted);
+  }
+  .compare-card[data-position='front'] .compare-card-market span::after {
+    animation: strike 640ms var(--ease-standard) 320ms both;
+  }
+  .compare-card-xiax {
+    display: flex;
+    align-items: baseline;
+    gap: 0.875rem;
+    margin-top: 1.5rem;
+    font-size: var(--text-3xl);
+    line-height: var(--text-3xl--line-height);
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+  @media (min-width: 64rem) {
+    .compare-card-xiax {
+      font-size: var(--text-4xl);
+      line-height: var(--text-4xl--line-height);
+    }
+  }
+  .compare-card[data-position='front'] .compare-card-xiax {
+    animation: step-in var(--dur-base) var(--ease-standard) 160ms both;
+  }
+  .compare-card-xiax i {
+    flex: none;
+    width: 0.875rem;
+    height: 0.875rem;
+    background: var(--accent);
+    transform: translateY(-0.2em);
+  }
+  .compare-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: var(--spacing-clearance);
+    padding-top: var(--spacing-margin);
+    border-top: 1px solid var(--hairline);
+  }
+  .compare-dots {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+  .compare-dots i {
+    display: block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 1px solid var(--on-muted);
+    transition:
+      background-color var(--dur-quick) var(--ease-standard),
+      border-color var(--dur-quick) var(--ease-standard);
+  }
+  .compare-dots i[data-filled='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* -- The method in focus: four cells of a ruled column; the step nearest
+        the middle of the screen turns to paper with its number in violet, the
+        steps ahead wait, and the cell leans toward the pointer. ------------ */
+  /* One column, always: the steps are a sequence, and the focus walks them
+     one at a time as the mark fills one satellite each. */
+  .method-list {
+    display: grid;
+    gap: 1px;
+    border: 1px solid var(--hairline);
+    background: var(--hairline);
+  }
+  .method-step {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--spacing-clearance);
+    align-items: start;
+    padding: var(--spacing-clearance);
+    background: var(--surface);
+    color: var(--on);
+    transition:
+      background-color var(--dur-base) var(--ease-standard),
+      color var(--dur-base) var(--ease-standard),
+      opacity var(--dur-base) var(--ease-standard),
+      transform var(--dur-quick) var(--ease-standard);
+  }
+  .method-step[data-state='ahead'] {
+    opacity: 0.5;
+  }
+  /* The step in focus takes the other polarity of its sector: paper on an
+     ink sector, ink on a paper one. */
+  .method-step[data-state='open'] {
+    --surface: var(--color-paper-soft);
+    --on: var(--color-ink);
+    --on-muted: var(--color-muted);
+    --accent: var(--color-core);
+    --on-accent: var(--color-paper);
+    --hairline: var(--color-rule);
+    background: var(--surface);
+    color: var(--on);
+  }
+  .band-ink .method-step[data-state='open'] {
+    --surface: var(--color-ink);
+    --on: var(--color-paper);
+    --on-muted: var(--color-muted-lift);
+    --accent: var(--color-core-lift);
+    --on-accent: var(--color-ink);
+    --hairline: var(--color-rule-lift);
+  }
+  .method-number {
+    font-size: var(--text-3xl);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+    color: var(--on-muted);
+    transition: color var(--dur-base) var(--ease-standard);
+  }
+  .method-step[data-state='read'] .method-number {
+    color: var(--on);
+  }
+  .method-step[data-state='open'] .method-number {
+    color: var(--accent);
+  }
+  .method-text {
+    position: relative;
   }
 }

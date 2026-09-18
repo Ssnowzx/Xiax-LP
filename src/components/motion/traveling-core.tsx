@@ -49,6 +49,7 @@ export function TravelingCore() {
     let visible = false
     let flying = false
     let frame = 0
+    let placedAt: Box | null = null
 
     const collect = () => {
       slots = Array.from(document.querySelectorAll('[data-core-slot]'))
@@ -67,6 +68,7 @@ export function TravelingCore() {
       const slot = slots[index]
       if (!slot) return
       const box = boxOf(slot)
+      placedAt = box
       flying = fly
       node.classList.toggle('is-flying', fly)
       slots.forEach((candidate, position) => {
@@ -97,7 +99,14 @@ export function TravelingCore() {
         if (next !== active) {
           active = next
           place(next, true)
+          return
         }
+        /* A slot inside a pinned stage moves with the page: follow it, in
+           the flight it is already in, so the core never slides off it. */
+        const slot = slots[active]
+        if (!slot || !placedAt) return
+        const box = boxOf(slot)
+        if (box.x !== placedAt.x || box.y !== placedAt.y) place(active, flying)
       })
     }
 

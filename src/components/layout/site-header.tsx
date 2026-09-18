@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { Lockup } from '@/components/brand/lockup'
 import { Container } from '@/components/layout/container'
+import { SectionCompass } from '@/components/layout/section-compass'
 import { PRIMARY_NAV } from '@/content/nav'
 
 export function SiteHeader() {
@@ -11,6 +12,7 @@ export function SiteHeader() {
         <Link href="/" aria-label="Xiax, página inicial" className="shrink-0" data-header-mark>
           <Lockup size={24} />
         </Link>
+        <SectionCompass />
         <nav aria-label="Principal" className="site-nav flex items-center gap-4 sm:gap-clearance">
           <ul className="site-nav-list flex items-center">
             {PRIMARY_NAV.map((item) => (
