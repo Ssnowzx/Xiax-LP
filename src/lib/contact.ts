@@ -62,6 +62,16 @@ export function signBody(body: string, secret: string): string {
   return `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`
 }
 
+/**
+ * A delivery that fails must leave a trace: without it, the form answers
+ * "sent" or "failed" and nobody can tell whether the relay refused, timed out
+ * or swallowed the message. Goes to the container log, never to the reader.
+ */
+function reportFailure(channel: 'webhook' | 'email', detail: unknown): void {
+  const reason = detail instanceof Error ? detail.message : String(detail)
+  console.error(`[contact] ${channel} delivery failed: ${reason}`)
+}
+
 async function postWebhook(
   payload: ContactPayload,
   { webhookUrl, secret, address, spam, fetchImpl = fetch }: DeliverOptions & { webhookUrl: string },
@@ -72,8 +82,10 @@ async function postWebhook(
   if (secret) headers[SIGNATURE_HEADER] = signBody(body, secret)
   try {
     const response = await fetchImpl(webhookUrl, { method: 'POST', headers, body })
+    if (!response.ok) reportFailure('webhook', `HTTP ${response.status}`)
     return response.ok
-  } catch {
+  } catch (error) {
+    reportFailure('webhook', error)
     return false
   }
 }
@@ -87,7 +99,8 @@ async function sendMail(
   try {
     await sendMailImpl(composed, mail.account)
     return true
-  } catch {
+  } catch (error) {
+    reportFailure('email', error)
     return false
   }
 }

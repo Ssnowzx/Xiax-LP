@@ -60,17 +60,28 @@ export function composeContactMail(payload: ContactPayload, options: ComposeOpti
   }
 }
 
+/** A relay that never answers must not hold the form open. */
+const CONNECTION_TIMEOUT_MS = 8000
+const SOCKET_TIMEOUT_MS = 15000
+
 /**
- * Sends through the configured SMTP server. Throws when the server refuses.
- * Port 465 is implicit TLS; an unauthenticated relay is spoken to in plain
- * text, because it lives on the same machine or private network.
+ * Sends through the configured SMTP server. Throws when the server refuses or
+ * goes quiet. Port 465 is implicit TLS; an unauthenticated relay is spoken to
+ * in plain text, because it lives on the same machine or private network.
  */
 export async function sendContactMail(mail: ContactMail, account: SmtpAccount): Promise<void> {
   const transport = createTransport({
     host: account.host,
     port: account.port,
     secure: account.port === 465,
+    connectionTimeout: CONNECTION_TIMEOUT_MS,
+    greetingTimeout: CONNECTION_TIMEOUT_MS,
+    socketTimeout: SOCKET_TIMEOUT_MS,
     ...(account.auth ? { auth: account.auth } : { ignoreTLS: true }),
   })
-  await transport.sendMail(mail)
+  try {
+    await transport.sendMail(mail)
+  } finally {
+    transport.close()
+  }
 }
