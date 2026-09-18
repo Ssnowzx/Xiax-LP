@@ -38,10 +38,30 @@ em telefone — `document.documentElement.scrollWidth` igual a `window.innerWidt
 | Variável | Obrigatória | Para quê |
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | não (padrão `https://xiax.com.br`) | URLs canônicas, sitemap, robots, JSON-LD |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | não | e-mail mostrado se o formulário não puder enviar |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | não (padrão `contato@xiax.com.br`) | e-mail mostrado se o formulário não puder enviar |
 | `CONTACT_WEBHOOK_URL` | não | endpoint da Xiax que recebe o formulário em JSON |
+| `CONTACT_WEBHOOK_SECRET` | não | segredo compartilhado; assina cada envio (HMAC-SHA256) no header `x-xiax-signature` |
 
 Sem `CONTACT_WEBHOOK_URL`, o formulário valida e avisa que o envio não está ligado.
+
+### Anti-spam
+
+Tudo no servidor, sem serviço de terceiro (`src/lib/spam.ts`):
+
+- honeypot preenchido, ou pontuação alta, responde "enviado" e descarta;
+- limite de 5 mensagens por 10 min, por IP e por e-mail remetente;
+- sinais pontuados: envio em menos de 3 s, links, HTML, alfabeto não latino, texto de venda
+  (SEO, backlinks, cassino...), nome estranho, e-mail descartável, mesmo texto repetido em 24 h.
+
+O JSON entregue ao webhook traz `address` (IP) e `spam: { verdict, score, reasons }`. `verdict`
+é `ham` ou `suspect`; o endpoint decide o que fazer com `suspect` (etiqueta, pasta, silêncio).
+
+Com `CONTACT_WEBHOOK_SECRET`, o endpoint deve recusar o que não vier assinado. Em Node:
+
+```js
+const expected = 'sha256=' + crypto.createHmac('sha256', SECRET).update(rawBody).digest('hex')
+const ok = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(req.headers['x-xiax-signature'] ?? ''))
+```
 
 ## Deploy (VPS própria)
 
@@ -51,6 +71,8 @@ docker compose up -d --build     # site + Caddy com TLS automático
 ```
 
 Aponte o DNS de `xiax.com.br` e `www` para a VPS antes de subir; o Caddy emite o certificado.
+Se a VPS já tem outro servidor nas portas 80/443, desligue o Caddy num `docker-compose.override.yml`
+(fica fora do git) e aponte o proxy existente para o contêiner `site`.
 
 ## Estrutura
 
