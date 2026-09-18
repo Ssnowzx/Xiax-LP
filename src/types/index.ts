@@ -123,11 +123,22 @@ export interface SpamVerdict {
   readonly reasons: readonly SpamReason[]
 }
 
+/** What the person typed, as typed. Sent back so a rejected form keeps their words. */
+export type ContactDraft = Readonly<Partial<Record<keyof ContactPayload, string>>>
+
 export type ContactResult =
   | { readonly status: 'idle' }
   | { readonly status: 'sent' }
-  | { readonly status: 'invalid'; readonly errors: Readonly<Partial<Record<keyof ContactPayload, string>>> }
-  | { readonly status: 'failed'; readonly reason: 'unconfigured' | 'rate-limited' | 'upstream' }
+  | {
+      readonly status: 'invalid'
+      readonly errors: Readonly<Partial<Record<keyof ContactPayload, string>>>
+      readonly values: ContactDraft
+    }
+  | {
+      readonly status: 'failed'
+      readonly reason: 'unconfigured' | 'rate-limited' | 'upstream'
+      readonly values: ContactDraft
+    }
 
 /** The six numbered parts of the sales page, in reading order. */
 export type PageSectionId = 'servico' | 'metodo' | 'frentes' | 'no-ar' | 'motor' | 'contato'

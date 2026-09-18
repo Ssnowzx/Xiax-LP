@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import type { ContactPayload, ContactResult } from '@/types'
+import type { ContactDraft, ContactPayload, ContactResult } from '@/types'
 import { Mark } from '@/components/brand/mark'
 import { Button } from '@/components/ui/button'
 import { FRONT_OPTIONS } from '@/content/fronts'
@@ -15,6 +15,9 @@ interface ContactFormProps {
 }
 
 const IDLE: ContactResult = { status: 'idle' }
+
+/** Reading order. The first field with an error is the one that gets the cursor. */
+const FIELD_ORDER = ['name', 'company', 'email', 'front', 'message'] as const
 
 function fieldError(state: ContactResult, field: keyof ContactPayload): string | undefined {
   if (state.status !== 'invalid') return undefined
@@ -54,6 +57,16 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
     setStartedAt(String(Date.now()))
   }, [])
 
+  // React empties the form once the action returns. Refill it with what was
+  // typed, and put the cursor on the first field that needs fixing, so a
+  // rejected message is never a blank card with a line of small print.
+  const draft: ContactDraft = state.status === 'invalid' || state.status === 'failed' ? state.values : {}
+  useEffect(() => {
+    if (state.status !== 'invalid') return
+    const first = FIELD_ORDER.find((field) => state.errors[field])
+    if (first) document.getElementById(first)?.focus()
+  }, [state])
+
   if (state.status === 'sent') {
     return (
       <div className="border-t border-on pt-clearance" role="status">
@@ -69,7 +82,7 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
   const frontError = fieldError(state, 'front')
   const messageError = fieldError(state, 'message')
   const frontHint = 'Se não souber, deixe como está.'
-  const messageHint = 'Conte do seu jeito: o que custa hora, cliente ou dinheiro.'
+  const messageHint = 'Conte do seu jeito, em pelo menos uma frase: o que custa hora, cliente ou dinheiro.'
 
   return (
     <form action={formAction} noValidate className="contact-form">
@@ -80,6 +93,7 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
             name="name"
             type="text"
             autoComplete="name"
+            defaultValue={draft.name ?? ''}
             required
             className="field"
             aria-invalid={Boolean(nameError)}
@@ -92,6 +106,7 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
             name="company"
             type="text"
             autoComplete="organization"
+            defaultValue={draft.company ?? ''}
             required
             className="field"
             aria-invalid={Boolean(companyError)}
@@ -104,6 +119,7 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
             name="email"
             type="email"
             autoComplete="email"
+            defaultValue={draft.email ?? ''}
             required
             className="field"
             aria-invalid={Boolean(emailError)}
@@ -115,7 +131,9 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
             <select
               id="front"
               name="front"
-              defaultValue="nao-sei"
+              // A select keeps the choice it was mounted with, so remount it when the draft differs.
+              key={draft.front ?? 'nao-sei'}
+              defaultValue={draft.front ?? 'nao-sei'}
               className="field field-select"
               aria-invalid={Boolean(frontError)}
               aria-describedby={describedBy('front', frontHint, frontError)}
@@ -135,6 +153,7 @@ export function ContactForm({ action, fallbackEmail }: ContactFormProps) {
           id="message"
           name="message"
           rows={5}
+          defaultValue={draft.message ?? ''}
           required
           className="field"
           aria-invalid={Boolean(messageError)}

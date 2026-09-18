@@ -54,7 +54,8 @@ export async function sendContact(_previous: ContactResult, formData: FormData):
   const requestHeaders = await headers()
   const address = requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   const sender = `email:${parsed.payload.email.toLowerCase()}`
-  if (isRateLimited(address) || isRateLimited(sender)) return { status: 'failed', reason: 'rate-limited' }
+  if (isRateLimited(address) || isRateLimited(sender))
+    return { status: 'failed', reason: 'rate-limited', values: { ...parsed.payload } }
 
   const spam = assessSpam(parsed.payload, { elapsedMs: elapsedSince(formData.get('startedAt')) })
   if (spam.verdict === 'spam') return { status: 'sent' }

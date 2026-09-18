@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto'
 
 import { z } from 'zod'
 
-import type { ContactPayload, ContactResult, SpamVerdict } from '@/types'
+import type { ContactDraft, ContactPayload, ContactResult, SpamVerdict } from '@/types'
 import type { ContactMail, SmtpAccount } from '@/lib/mail'
 import { composeContactMail, sendContactMail } from '@/lib/mail'
 
@@ -21,6 +21,18 @@ export const contactSchema = z.object({
     .max(4000, 'Resuma em até 4.000 caracteres.'),
 })
 
+/** Echoes back whatever came in as text, so a rejected form is refilled, not emptied. */
+function draftFrom(input: unknown): ContactDraft {
+  if (typeof input !== 'object' || input === null) return {}
+  const source = input as Record<string, unknown>
+  const draft: Record<string, string> = {}
+  for (const field of Object.keys(contactSchema.shape)) {
+    const value = source[field]
+    if (typeof value === 'string') draft[field] = value
+  }
+  return draft
+}
+
 export function parseContact(input: unknown): ContactResult | { status: 'ok'; payload: ContactPayload } {
   const parsed = contactSchema.safeParse(input)
   if (parsed.success) return { status: 'ok', payload: parsed.data }
@@ -33,7 +45,7 @@ export function parseContact(input: unknown): ContactResult | { status: 'ok'; pa
       if (!errors[key]) errors[key] = issue.message
     }
   }
-  return { status: 'invalid', errors }
+  return { status: 'invalid', errors, values: draftFrom(input) }
 }
 
 /** Mailbox, sender and the server that carries it. All come from the environment. */
@@ -115,8 +127,10 @@ export async function deliverContact(payload: ContactPayload, options: DeliverOp
   const attempts: Promise<boolean>[] = []
   if (options.webhookUrl) attempts.push(postWebhook(payload, { ...options, webhookUrl: options.webhookUrl }, receivedAt))
   if (options.mail) attempts.push(sendMail(payload, { ...options, mail: options.mail }, receivedAt))
-  if (attempts.length === 0) return { status: 'failed', reason: 'unconfigured' }
+  // A message that could not be delivered stays in the form, ready to be sent again.
+  const values = { ...payload }
+  if (attempts.length === 0) return { status: 'failed', reason: 'unconfigured', values }
 
   const outcomes = await Promise.all(attempts)
-  return outcomes.some(Boolean) ? { status: 'sent' } : { status: 'failed', reason: 'upstream' }
+  return outcomes.some(Boolean) ? { status: 'sent' } : { status: 'failed', reason: 'upstream', values }
 }

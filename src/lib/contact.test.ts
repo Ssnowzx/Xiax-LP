@@ -40,6 +40,26 @@ describe('parseContact', () => {
     }
   })
 
+  it('should send back what was typed, so the form is refilled and not emptied', () => {
+    // ARRANGE
+    const input = { ...VALID, message: 'curto' }
+
+    // ACT
+    const result = parseContact(input)
+
+    // ASSERT
+    expect(result.status).toBe('invalid')
+    if (result.status === 'invalid') {
+      expect(result.values).toEqual({
+        name: 'Ana',
+        email: 'ana@empresa.com.br',
+        company: 'Empresa',
+        front: 'gestao',
+        message: 'curto',
+      })
+    }
+  })
+
   it('should reject a front outside the four plus "não sei"', () => {
     // ARRANGE
     const input = { ...VALID, front: 'consultoria' }
@@ -71,7 +91,7 @@ describe('deliverContact', () => {
     const result = await deliverContact(payload, { ...context, webhookUrl })
 
     // ASSERT
-    expect(result).toEqual({ status: 'failed', reason: 'unconfigured' })
+    expect(result).toEqual({ status: 'failed', reason: 'unconfigured', values: payload })
   })
 
   it('should post JSON to the webhook and report sent on 2xx', async () => {
@@ -122,8 +142,8 @@ describe('deliverContact', () => {
     const onThrow = await deliverContact(payload, { ...context, webhookUrl: 'https://x.test', fetchImpl: throwing })
 
     // ASSERT
-    expect(onStatus).toEqual({ status: 'failed', reason: 'upstream' })
-    expect(onThrow).toEqual({ status: 'failed', reason: 'upstream' })
+    expect(onStatus).toEqual({ status: 'failed', reason: 'upstream', values: payload })
+    expect(onThrow).toEqual({ status: 'failed', reason: 'upstream', values: payload })
   })
 
   type SendMail = (mail: ContactMail, account: SmtpAccount) => Promise<void>
@@ -168,6 +188,6 @@ describe('deliverContact', () => {
     const result = await deliverContact(payload, { ...context, webhookUrl: undefined, mail, sendMailImpl })
 
     // ASSERT
-    expect(result).toEqual({ status: 'failed', reason: 'upstream' })
+    expect(result).toEqual({ status: 'failed', reason: 'upstream', values: payload })
   })
 })
