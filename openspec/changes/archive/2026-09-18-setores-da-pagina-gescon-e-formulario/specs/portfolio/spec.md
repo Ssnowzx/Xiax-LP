@@ -1,10 +1,4 @@
-# Portfólio
-
-## Purpose
-
-Só sistema que existe, no estado real. O portfólio é prova, não promessa.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Só produção
 
@@ -26,13 +20,7 @@ Cada captura de tela SHALL registrar `source` (o domínio de onde saiu) e `captu
 - **WHEN** o visor da Gestão de Convênios aparece na página
 - **THEN** a legenda diz "Telas reais de gescon.gestaonossa.com.br, 2026-09-17. Nomes, carteirinhas e números de guia foram substituídos."
 
-### Requirement: Nome de cliente só com autorização
-
-Nenhum cliente SHALL ser nomeado sem autorização por escrito. Pendência aberta: a captura real da agenda mostra o nome de uma clínica; antes de o site ir ao ar, obter a autorização ou trocar a captura.
-
-#### Scenario: Página /portfolio
-- **WHEN** a pessoa abre `/portfolio`
-- **THEN** vê a mesma lista da página inicial, com o botão externo "Abrir Xclinicas"
+## ADDED Requirements
 
 ### Requirement: Dado pessoal substituído antes de publicar
 

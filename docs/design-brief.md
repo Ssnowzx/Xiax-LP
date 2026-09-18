@@ -134,10 +134,13 @@ a proposta original era **padrão claro** — papel branco, estrutura preta, vio
 momentos de núcleo.
 
 **Decisão do fundador (10/09/2026): o site é escuro, e só escuro.** O tema claro foi
-removido. A mitigação passa a ser outra: o violeta continua ocupando só o núcleo — um único
-quadrado que viaja a página — e a seção "Donos do motor" inverte a polaridade (papel branco)
-para quebrar a monotonia do preto. A regra dos ~9% vale igual: nenhum fundo, faixa ou botão
-extra em violeta; quando um botão fica violeta é porque o núcleo pousou nele.
+removido. **Revisão do fundador (17/09/2026): "muito preto e branco, sem vida; os setores
+parecem uma coisa só".** A resposta é ritmo de superfícies, não cor nova: a página é tinta,
+e os setores 02 (método) e 04 (o que está no ar) são papel branco, com o cartão do contato,
+o baralho da comparação e a folha da tabela também em papel. O violeta continua marcador:
+o núcleo que viaja a página, os números que guiam a leitura (índice, cabeçalhos de setor,
+passo em foco), o átomo e a varredura nos cartões. Nenhum fundo ou faixa em violeta; quando
+um botão fica violeta é porque o núcleo pousou nele.
 
 Duas outras decisões do fundador contrariam o manual e estão registradas aqui de propósito:
 a assinatura no rodapé é centralizada, e o núcleo do diagrama antes/depois leva a marca
@@ -160,7 +163,14 @@ proíbe partícula, rede e circuito — o núcleo precisa ser o quadrado de 30u,
 
 O manual já resolve o violeta em fundo escuro (`#8E6FE0`), mas **não define secundário para
 fundo escuro**. Proposta a validar com quem cuida da marca: `#8E8E93` (6,04:1 sobre `#0B0B0C`).
-Está nos tokens como `--color-muted-lift` e é a única extensão do manual feita aqui.
+Está nos tokens como `--color-muted-lift`.
+
+Segunda extensão, por decisão do fundador em 17/09/2026 ("o branco dos fundos machuca os
+olhos"): **papel suave `oklch(0.96 0.004 295)`** (≈ `#F4F3F6`) para toda superfície de papel
+(setores 02 e 04, folha da tabela, cartões do baralho, do contato e do método). O texto em
+papel sobre tinta continua `#FFFFFF`. Contrastes sobre o papel suave: `#0B0B0C` 17:1 ·
+`#6E6E72` 4,6:1 (passa AA) · `#7B57D4` 4,6:1 (passa AA). Token `--color-paper-soft`, na lista
+da guarda de marca.
 
 ---
 
@@ -169,8 +179,10 @@ Está nos tokens como `--color-muted-lift` e é a única extensão do manual fei
 - `company/offering.md` está "a preencher": escopo, o que não entra, prazo, faixa de preço e
   critério de aceite das quatro frentes. Sem isso, as quatro páginas de frente não têm o que dizer
   além da promessa de uma linha.
-- **Portfólio, por decisão do fundador (09/09/2026): só o Xclinicas, por enquanto.** Está em
-  produção em `xclinicas.xiax.com.br`, com preço público. Outros sistemas da casa (Gestão Nossa,
+- **Portfólio: Xclinicas e, desde 17/09/2026, a Gestão de Convênios** (`gescon.gestaonossa.com.br`,
+  a esteira de convênios do Xclinicas, em produção). As telas da Gestão de Convênios são reais,
+  capturadas do sistema em uso, com nome de paciente, carteirinha e número de guia substituídos
+  antes da publicação; a legenda declara a substituição. Outros sistemas da casa (Gestão Nossa,
   Só Boleiros, Xiax para barbearias) ficam fora até haver autorização e estado confirmado.
 - `company/team.md` está quase vazio: sem papéis nem contatos para a página Sobre.
 - Sem domínio, e-mail de contato e endpoint de formulário confirmados.
@@ -185,11 +197,58 @@ Está nos tokens como `--color-muted-lift` e é a única extensão do manual fei
 - `src/components/brand/mark.tsx` — geometria exata do manual, com a regra de cor no núcleo em código.
 - `src/types/index.ts` — contratos de Frente, Case (com `source` obrigatório em cada número) e status.
 - `src/content/fronts.ts` — as quatro frentes, com escopo vazio até `offering.md` sair do "a preencher".
+- `src/components/sections/fronts-stage.tsx` — as quatro frentes como os satélites do símbolo:
+  placas de papel com contorno de tinta em volta do núcleo violeta, cada uma com uma placa de
+  tinta-cinza deslocada 0,75 rem atrás. Profundidade por geometria, como o símbolo é construído;
+  sem sombra (o fundador pediu "uma sombra atrás das caixas" e a marca responde assim). No palco,
+  o ritmo interno das placas (padding, loader, vãos, corpo do título e da promessa) acompanha a
+  altura da tela, para as quatro caberem inteiras de 650 px em diante.
 - `docs/motion-spec.md` — o sistema de movimento: núcleo viajante, símbolo nascendo, carcaça de
   satélites, grade sob o cursor, operação antes/depois, mosaico das frentes, Tetris de quadrados,
   varredura violeta, Xclinicas simulado.
 - `src/content/ctas.ts` — as chamadas para ação de fim de seção, uma frase por momento da leitura.
+- `src/content/sections.ts` — os seis setores numerados da página (nome e uma frase cada). Cada
+  setor abre com fio, número e nome (`SectionHead`); o hero termina no índice dos seis; a bússola
+  do cabeçalho mostra o setor em tela; o índice do hero são seis células de uma grade com fio
+  (número, nome e a frase), não cards soltos. Numeração permitida porque a página é uma
+  sequência de argumento, e sempre em caixa baixa: nada de eyebrow.
+- `src/components/sections/comparison-stage.tsx` — a comparação "software sob encomenda | Xiax"
+  um par por vez: palco fixo com cartão de papel sobre a lista velada (desktop) ou o par do meio
+  da tela em papel (telefone). Sem sombra: o "flutuar" vem do papel sobre o véu escuro.
+- `src/components/motion/use-runway.ts` e `runway.tsx` — a pista e a trava dos palcos: um passo por
+  gesto, snap obrigatório enquanto um passo está aberto, solta no último quando o palco pede
+  (`releaseAtLast`), e solta antes de qualquer salto de âncora. A entrada da pista tem de ser mais
+  alta que a linha do passo (30 vh), ou não há caminho de volta do primeiro passo.
+- `src/components/sections/screen-viewer.tsx` — telas reais numa janela Xiax, uma aba por módulo.
+  No telefone a tela mantém altura legível e rola para o lado sob o dedo; o painel ativo é focável.
 - `openspec/specs/` — as specs vigentes, por capacidade.
+
+---
+
+## 9. Auditoria antes de dizer "pronto"
+
+Além de `pnpm check` e `pnpm build`, uma mudança visual ou de rolagem só está pronta depois de
+passar, com Playwright, por:
+
+- **Rotas** (`/`, `/portfolio`, `/contato`, `/privacidade`), em desktop e telefone: console sem
+  erro nem aviso, nenhuma requisição falha, sem aviso de hidratação, CLS abaixo de 0,1, axe sem
+  violação crítica ou séria (as únicas aceitas: os pares ainda não lidos da comparação, apagados
+  de propósito no telefone; a barra da janela do demo enquanto ainda entra em tela).
+- **Largura**: `scrollWidth == innerWidth` em 22 larguras de 320 a 1920 px, nas quatro rotas.
+- **Rolagem contínua**: gestos emulados de trackpad de cima a baixo e de volta, em 1440×900 e
+  1280×690, sem ponto em que três gestos seguidos não movam a página; `scroll-snap-type` volta a
+  vazio no fim; PageDown e PageUp atravessam a página inteira.
+- **Palcos**: ida por todos os passos, zona livre, volta ao repouso, volta passo a passo até a
+  entrada, saída para cima, teclado a partir do primeiro passo, reentrada por baixo (comparação e
+  frentes, 900 e 760 px); as quatro placas das frentes inteiras em 1440×{900, 836, 760, 700, 650},
+  1280×{690, 653} e 1024×768.
+- **Âncoras com palco aberto**: cabeçalho, bússola e índice a partir de um cartão aberto ou de uma
+  frente à vista chegam ao setor pedido, com o snap desligado.
+- **Quadros**: nenhum quadro acima de 250 ms durante gestos no hero, no baralho e nas frentes
+  (headless, sem GPU: indicativo).
+- **Movimento reduzido**: a mesma travessia, sem palco e sem snap em momento algum.
+- **Telefone**: trilho das frentes e tela do portfólio rolam para o lado por toque; alvos de toque
+  de links com pelo menos 24 px; formulário vazio mostra os quatro erros e não envia.
 
 Fontes: `Cursor/XiaxFolder/company/brand/brand-context.md`, `company/identity.md`,
 `company/offering.md`, `company/stack.md`, `company/team.md`.

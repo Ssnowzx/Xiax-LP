@@ -27,6 +27,7 @@ pnpm dev               # http://localhost:3000
 | `pnpm brand:check` | confere cores, fontes e geometria contra o manual da marca |
 | `pnpm slop:check` | reprova gradiente, sombra, radius, eyebrow, hype e tropos proibidos |
 | `pnpm shots` | captura desktop, tablet e telefone com Playwright (precisa de `pnpm start` rodando) |
+| `osascript scripts/snapshot-chrome-tab.applescript` | tela real de um sistema logado no Chrome da máquina, com dado pessoal substituído dentro da página (`scripts/anonymize-snapshot.js`); `scripts/render-snapshot.mjs` renderiza em 2x e prova que nenhum nome ou número do original sobreviveu |
 
 Antes de dizer "pronto" numa mudança visual: `pnpm check`, `pnpm build` e a sonda de largura
 em telefone — `document.documentElement.scrollWidth` igual a `window.innerWidth` em 320, 390,
@@ -56,13 +57,14 @@ Aponte o DNS de `xiax.com.br` e `www` para a VPS antes de subir; o Caddy emite o
 ```
 src/app/              rotas: /, /portfolio, /contato, /privacidade · robots · sitemap · globals.css (tokens e movimento)
 src/components/brand/ símbolo, lockup e os oito loaders do manual
-src/components/motion/ núcleo viajante, carcaça, grade sob o cursor, operação antes/depois, Tetris, varredura violeta
+src/components/motion/ núcleo viajante, carcaça, grade sob o cursor, pista e trava de gesto dos palcos (useRunway/Runway), operação antes/depois, Tetris, varredura violeta
+src/components/layout/ cabeçalho com a bússola de setores, cabeçalho de setor, rodapé
 src/components/demo/  Xclinicas simulado (sem back-end) operado pelo cursor-núcleo
-src/components/sections/ hero, serviço, método, frentes, portfólio, motor, contato
+src/components/sections/ hero e índice de setores, serviço (baralho da comparação), método, frentes (placas), portfólio (visor de telas reais), motor, contato
 src/components/ui/    botões e trilho de chamada para ação
 src/content/          copy e dados: empresa, frentes, método, comparação, portfólio, chamadas, claims proibidos
 src/lib/              env, seo, contato (zod), rate limit
-scripts/              guardas de marca e anti-slop, capturas, deploy
+scripts/              guardas de marca e anti-slop, capturas de tela, captura anonimizada de sistema logado (AppleScript + Playwright), deploy
 docs/                 brief de design, referências, spec de movimento, fontes da marca
 openspec/             specs por capacidade e mudanças arquivadas (spec-driven)
 ```
@@ -75,11 +77,20 @@ mensagem". O resto do movimento — símbolo nascendo, satélites nos cantos, mo
 Tetris no rodapé, violeta que varre o texto do contato — está descrito em `docs/motion-spec.md`.
 `prefers-reduced-motion` e toque desligam tudo.
 
+Dois setores viram palco numa tela larga: a comparação, um par por vez num baralho de papel
+sobre a página velada, e as quatro frentes, que nascem do centro uma por gesto. Nos dois, um
+gesto de roda, trackpad ou teclado move exatamente um passo (`src/components/motion/use-runway.ts`);
+chegando ao último, a rolagem segue livre, e um salto para qualquer âncora da página solta a trava
+antes. No telefone não há palco: as frentes são um trilho que rola para o lado e as telas do
+portfólio rolam para o lado dentro da janela.
+
 ## Contribuir
 
 Leia `CLAUDE.md`. Mudança de comportamento passa por `/opsx:propose` antes do código; as
 specs vigentes estão em `openspec/specs/`. `pnpm check` precisa passar antes de qualquer
-commit. Commits em Conventional Commits, em inglês.
+commit. Commits em Conventional Commits, em inglês. Antes de dizer "pronto" numa mudança visual
+ou de rolagem, rode também a auditoria descrita em `docs/design-brief.md` §9 (ida e volta dos
+palcos, saltos de âncora, larguras, console, acessibilidade).
 
 ## Pendências antes de ir ao ar
 

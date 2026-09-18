@@ -45,10 +45,12 @@ passar; corrija a peça.
 
 Mudança de comportamento passa pelo OpenSpec: `/opsx:propose` → revisão → `/opsx:apply` →
 `/opsx:archive`. As specs vigentes estão em `openspec/specs/`. Commit em Conventional Commits,
-inglês, só quando o usuário pedir; commit e push vão para `github.com/Ssnowzx/xiaxLP`.
+inglês, só quando o usuário pedir; commit e push vão para `github.com/Ssnowzx/Xiax-LP`.
 
 ## Antes de dizer "pronto" numa mudança visual
 
 `pnpm check`, `pnpm build`, captura com Playwright nos tamanhos que mudaram, e a sonda de
 largura em telefone: `scrollWidth == innerWidth` em 320, 390, 412 e 768 px, nas três rotas.
 Um elemento que não quebra linha (endereço, etiqueta, item de menu) é o suspeito habitual.
+Mudança de rolagem ou de palco passa ainda pela auditoria de `docs/design-brief.md` §9: ida e
+volta inteira dos palcos, saltos de âncora com palco aberto, teclado, e console limpo.
