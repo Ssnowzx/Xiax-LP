@@ -3,6 +3,8 @@ import { createHmac } from 'node:crypto'
 import { z } from 'zod'
 
 import type { ContactPayload, ContactResult, SpamVerdict } from '@/types'
+import type { ContactMail, SmtpAccount } from '@/lib/mail'
+import { composeContactMail, sendContactMail } from '@/lib/mail'
 
 const FRONT_VALUES = ['plataformas', 'gestao', 'automacao', 'produtos', 'nao-sei'] as const
 
@@ -34,14 +36,22 @@ export function parseContact(input: unknown): ContactResult | { status: 'ok'; pa
   return { status: 'invalid', errors }
 }
 
+/** Mailbox plus the account that sends to it. Both come from the environment. */
+export interface MailChannel {
+  readonly to: string
+  readonly account: SmtpAccount
+}
+
 interface DeliverOptions {
   readonly webhookUrl: string | undefined
   /** Shared with the endpoint. When set, the body is signed so the endpoint can refuse anything else. */
   readonly secret?: string | undefined
+  readonly mail?: MailChannel | undefined
   /** Address the message came from, for the endpoint to filter or block. */
   readonly address: string
   readonly spam: SpamVerdict
   readonly fetchImpl?: typeof fetch
+  readonly sendMailImpl?: (mail: ContactMail, account: SmtpAccount) => Promise<void>
 }
 
 export const SIGNATURE_HEADER = 'x-xiax-signature'
@@ -51,21 +61,48 @@ export function signBody(body: string, secret: string): string {
   return `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`
 }
 
-/** Posts the message to Xiax's own endpoint. No third-party form service. */
-export async function deliverContact(
+async function postWebhook(
   payload: ContactPayload,
-  { webhookUrl, secret, address, spam, fetchImpl = fetch }: DeliverOptions,
-): Promise<ContactResult> {
-  if (!webhookUrl) return { status: 'failed', reason: 'unconfigured' }
-
-  const body = JSON.stringify({ ...payload, receivedAt: new Date().toISOString(), source: 'xiax-site', address, spam })
+  { webhookUrl, secret, address, spam, fetchImpl = fetch }: DeliverOptions & { webhookUrl: string },
+  receivedAt: Date,
+): Promise<boolean> {
+  const body = JSON.stringify({ ...payload, receivedAt: receivedAt.toISOString(), source: 'xiax-site', address, spam })
   const headers: Record<string, string> = { 'content-type': 'application/json' }
   if (secret) headers[SIGNATURE_HEADER] = signBody(body, secret)
-
   try {
     const response = await fetchImpl(webhookUrl, { method: 'POST', headers, body })
-    return response.ok ? { status: 'sent' } : { status: 'failed', reason: 'upstream' }
+    return response.ok
   } catch {
-    return { status: 'failed', reason: 'upstream' }
+    return false
   }
+}
+
+async function sendMail(
+  payload: ContactPayload,
+  { mail, address, spam, sendMailImpl = sendContactMail }: DeliverOptions & { mail: MailChannel },
+  receivedAt: Date,
+): Promise<boolean> {
+  const composed = composeContactMail(payload, { to: mail.to, fromAddress: mail.account.user, address, spam, receivedAt })
+  try {
+    await sendMailImpl(composed, mail.account)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Hands the message to every channel Xiax configured: its own webhook, its own
+ * mailbox over SMTP, or both. No third-party form service. The person sees
+ * "sent" when at least one channel took it.
+ */
+export async function deliverContact(payload: ContactPayload, options: DeliverOptions): Promise<ContactResult> {
+  const receivedAt = new Date()
+  const attempts: Promise<boolean>[] = []
+  if (options.webhookUrl) attempts.push(postWebhook(payload, { ...options, webhookUrl: options.webhookUrl }, receivedAt))
+  if (options.mail) attempts.push(sendMail(payload, { ...options, mail: options.mail }, receivedAt))
+  if (attempts.length === 0) return { status: 'failed', reason: 'unconfigured' }
+
+  const outcomes = await Promise.all(attempts)
+  return outcomes.some(Boolean) ? { status: 'sent' } : { status: 'failed', reason: 'upstream' }
 }

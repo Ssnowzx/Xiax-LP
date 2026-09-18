@@ -16,10 +16,10 @@ O site SHALL rodar em Docker (build multi-stage, saída `standalone` do Next.js)
 
 ### Requirement: Variáveis de ambiente
 
-`NEXT_PUBLIC_SITE_URL` (padrão `https://xiax.com.br`) SHALL alimentar URLs canônicas, sitemap, robots e JSON-LD; `NEXT_PUBLIC_CONTACT_EMAIL` (padrão `contato@xiax.com.br`, fixado no build), `CONTACT_WEBHOOK_URL` e `CONTACT_WEBHOOK_SECRET` são opcionais e validadas em `src/lib/env.ts`. `.env` e `docker-compose.override.yml` ficam fora do git.
+`NEXT_PUBLIC_SITE_URL` (padrão `https://xiax.com.br`) SHALL alimentar URLs canônicas, sitemap, robots e JSON-LD; `NEXT_PUBLIC_CONTACT_EMAIL` (padrão `xiaxdesenvolvimento@gmail.com`, fixado no build), `CONTACT_WEBHOOK_URL`, `CONTACT_WEBHOOK_SECRET`, `CONTACT_SMTP_HOST` (padrão `smtp.gmail.com`), `CONTACT_SMTP_PORT` (padrão `465`), `CONTACT_SMTP_USER`, `CONTACT_SMTP_PASS` e `CONTACT_TO_EMAIL` são opcionais, validadas em `src/lib/env.ts` e repassadas pelo `docker-compose.yml` em tempo de execução, sem rebuild. `.env` e `docker-compose.override.yml` ficam fora do git.
 
-#### Scenario: Sem webhook
-- **WHEN** `CONTACT_WEBHOOK_URL` não está definida
+#### Scenario: Sem canal de entrega
+- **WHEN** nem SMTP nem `CONTACT_WEBHOOK_URL` estão definidos
 - **THEN** o build passa e o formulário avisa que o envio não está ligado
 
 ### Requirement: Nenhum terceiro no navegador

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { SpamVerdict } from '@/types'
+import type { ContactMail, SmtpAccount } from '@/lib/mail'
 import { SIGNATURE_HEADER, deliverContact, parseContact, signBody } from '@/lib/contact'
 
 const VALID = {
@@ -56,7 +57,12 @@ describe('deliverContact', () => {
   const ham: SpamVerdict = { verdict: 'ham', score: 0, reasons: [] }
   const context = { address: '203.0.113.7', spam: ham }
 
-  it('should report unconfigured when there is no webhook', async () => {
+  const mail = {
+    to: 'xiaxdesenvolvimento@gmail.com',
+    account: { host: 'smtp.gmail.com', port: 465, user: 'xiaxdesenvolvimento@gmail.com', pass: 'segredo' },
+  }
+
+  it('should report unconfigured when there is neither webhook nor mailbox', async () => {
     // ARRANGE
     const webhookUrl = undefined
 
@@ -117,5 +123,50 @@ describe('deliverContact', () => {
     // ASSERT
     expect(onStatus).toEqual({ status: 'failed', reason: 'upstream' })
     expect(onThrow).toEqual({ status: 'failed', reason: 'upstream' })
+  })
+
+  type SendMail = (mail: ContactMail, account: SmtpAccount) => Promise<void>
+
+  it('should send the e-mail through the SMTP account and report sent', async () => {
+    // ARRANGE
+    const sendMailImpl = vi.fn<SendMail>(async () => undefined)
+
+    // ACT
+    const result = await deliverContact(payload, { ...context, webhookUrl: undefined, mail, sendMailImpl })
+
+    // ASSERT
+    expect(result).toEqual({ status: 'sent' })
+    const [composed, account] = sendMailImpl.mock.calls[0] ?? []
+    expect(account).toBe(mail.account)
+    expect(composed?.to).toBe('xiaxdesenvolvimento@gmail.com')
+    expect(composed?.replyTo.address).toBe('ana@empresa.com.br')
+    expect(composed?.text).toContain('Origem: 203.0.113.7')
+  })
+
+  it('should report sent when the e-mail goes out even if the webhook fails', async () => {
+    // ARRANGE
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(null, { status: 500 }))
+    const sendMailImpl = vi.fn<SendMail>(async () => undefined)
+
+    // ACT
+    const result = await deliverContact(payload, { ...context, webhookUrl: 'https://x.test', mail, fetchImpl, sendMailImpl })
+
+    // ASSERT
+    expect(result).toEqual({ status: 'sent' })
+    expect(fetchImpl).toHaveBeenCalledOnce()
+    expect(sendMailImpl).toHaveBeenCalledOnce()
+  })
+
+  it('should report upstream failure when the SMTP server refuses', async () => {
+    // ARRANGE
+    const sendMailImpl = vi.fn<SendMail>(async () => {
+      throw new Error('535 auth failed')
+    })
+
+    // ACT
+    const result = await deliverContact(payload, { ...context, webhookUrl: undefined, mail, sendMailImpl })
+
+    // ASSERT
+    expect(result).toEqual({ status: 'failed', reason: 'upstream' })
   })
 })

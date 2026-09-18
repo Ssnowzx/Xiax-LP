@@ -38,11 +38,25 @@ em telefone — `document.documentElement.scrollWidth` igual a `window.innerWidt
 | Variável | Obrigatória | Para quê |
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | não (padrão `https://xiax.com.br`) | URLs canônicas, sitemap, robots, JSON-LD |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | não (padrão `contato@xiax.com.br`) | e-mail mostrado se o formulário não puder enviar |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | não (padrão `xiaxdesenvolvimento@gmail.com`) | e-mail mostrado se o formulário não puder enviar |
+| `CONTACT_SMTP_USER` / `CONTACT_SMTP_PASS` | não | conta SMTP que envia o formulário por e-mail; os dois juntos ligam o envio |
+| `CONTACT_SMTP_HOST` / `CONTACT_SMTP_PORT` | não (padrão `smtp.gmail.com` / `465`) | servidor SMTP |
+| `CONTACT_TO_EMAIL` | não (padrão `NEXT_PUBLIC_CONTACT_EMAIL`) | caixa que recebe o formulário |
 | `CONTACT_WEBHOOK_URL` | não | endpoint da Xiax que recebe o formulário em JSON |
 | `CONTACT_WEBHOOK_SECRET` | não | segredo compartilhado; assina cada envio (HMAC-SHA256) no header `x-xiax-signature` |
 
-Sem `CONTACT_WEBHOOK_URL`, o formulário valida e avisa que o envio não está ligado.
+O formulário entrega por e-mail (SMTP), por webhook, ou pelos dois; "enviado" quando ao menos um
+aceitou. Sem nenhum dos dois, valida e avisa que o envio não está ligado.
+
+### E-mail pelo Gmail
+
+1. Na conta Google, ligue a verificação em duas etapas.
+2. Crie uma senha de app em <https://myaccount.google.com/apppasswords> (nome livre, ex. "site").
+3. No `.env` da VPS: `CONTACT_SMTP_USER=xiaxdesenvolvimento@gmail.com` e `CONTACT_SMTP_PASS=` a senha
+   de app (com ou sem os espaços). Depois `docker compose up -d` (o `.env` é lido no `up`, sem rebuild).
+
+A mensagem chega em texto puro, com `Reply-To` na pessoa: responder o e-mail já responde o lead.
+Mensagem na zona de suspeita vai com `[suspeito]` no assunto e as razões no corpo.
 
 ### Anti-spam
 
@@ -85,7 +99,7 @@ src/components/demo/  Xclinicas simulado (sem back-end) operado pelo cursor-núc
 src/components/sections/ hero e índice de setores, serviço (baralho da comparação), método, frentes (placas), portfólio (visor de telas reais), motor, contato
 src/components/ui/    botões e trilho de chamada para ação
 src/content/          copy e dados: empresa, frentes, método, comparação, portfólio, chamadas, claims proibidos
-src/lib/              env, seo, contato (zod), rate limit
+src/lib/              env, seo, contato (zod), mail (SMTP), rate limit, spam
 scripts/              guardas de marca e anti-slop, capturas de tela, captura anonimizada de sistema logado (AppleScript + Playwright), deploy
 docs/                 brief de design, referências, spec de movimento, fontes da marca
 openspec/             specs por capacidade e mudanças arquivadas (spec-driven)
